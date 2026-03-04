@@ -84,10 +84,38 @@ public class GlobalExceptionHandler {
 	public ResponseEntity<ApiError> handleAuthenticationException(AuthenticationException ex,
 			HttpServletRequest request) {
 
-		ApiError apiError = ApiError.builder().timestamp(LocalDateTime.now()).statusCode(HttpStatus.UNAUTHORIZED.value())
-				.error("User authentication error").message("Authentication failed: " + ex.getMessage())
-				.path(request.getRequestURI()).build();
+		ApiError apiError = ApiError.builder().timestamp(LocalDateTime.now())
+				.statusCode(HttpStatus.UNAUTHORIZED.value()).error("User authentication error")
+				.message("Authentication failed: " + ex.getMessage()).path(request.getRequestURI()).build();
 
 		return new ResponseEntity<>(apiError, HttpStatus.UNAUTHORIZED);
 	}
+
+	@ExceptionHandler(UnlinkedUserException.class)
+	public ResponseEntity<ApiError> handleUserOrganizationLinked(UnlinkedUserException ex, HttpServletRequest request) {
+
+		ApiError apiError = ApiError.builder().timestamp(LocalDateTime.now()).statusCode(HttpStatus.NOT_FOUND.value())
+				.error("User error").message(ex.getMessage()).path(request.getRequestURI()).build();
+
+		return new ResponseEntity<>(apiError, HttpStatus.NOT_FOUND);
+	}
+
+	@ExceptionHandler(RoleAssignmentException.class)
+	public ResponseEntity<ApiError> handleUserRole(RoleAssignmentException ex, HttpServletRequest request) {
+
+		ApiError apiError = ApiError.builder().timestamp(LocalDateTime.now()).statusCode(HttpStatus.BAD_REQUEST.value())
+				.error("User role error").message(ex.getMessage()).path(request.getRequestURI()).build();
+
+		return new ResponseEntity<>(apiError, HttpStatus.BAD_REQUEST);
+	}
+
+	@ExceptionHandler(IllegalActionException.class)
+	public ResponseEntity<ApiError> handleUserAction(IllegalActionException ex, HttpServletRequest request) {
+
+		ApiError apiError = ApiError.builder().timestamp(LocalDateTime.now()).statusCode(HttpStatus.BAD_REQUEST.value())
+				.error("User action error").message(ex.getMessage()).path(request.getRequestURI()).build();
+
+		return new ResponseEntity<>(apiError, HttpStatus.BAD_REQUEST);
+	}
+
 }

@@ -27,6 +27,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/org/**").hasRole("SUPER_ADMIN")
+                .requestMatchers("/api/owner/**").hasRole("OWNER")
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, 
