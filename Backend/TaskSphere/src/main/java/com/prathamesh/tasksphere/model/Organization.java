@@ -40,6 +40,9 @@ public class Organization {
             cascade = CascadeType.ALL,
             orphanRemoval = true)
     private List<User> users;
+    
+    @OneToMany(mappedBy = "organization")
+    private List<Project> projects;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

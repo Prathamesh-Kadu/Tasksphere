@@ -1,6 +1,7 @@
 package com.prathamesh.tasksphere.model;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 import java.util.UUID;
 
 import jakarta.persistence.Column;
@@ -11,6 +12,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
@@ -48,6 +50,9 @@ public class User {
     @ManyToOne
     @JoinColumn(name = "organization_id")
     private Organization organization;
+    
+    @ManyToMany(mappedBy = "members")
+    private Set<Project> projects;
 
     @Column(nullable = false)
     @Builder.Default
