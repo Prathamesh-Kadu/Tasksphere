@@ -29,6 +29,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/org/**").hasRole("SUPER_ADMIN")
                 .requestMatchers("/api/owner/**").hasRole("OWNER")
                 .requestMatchers("/api/project/**").hasAnyRole("SUPER_ADMIN","OWNER", "ADMIN", "MEMBER")
+                .requestMatchers("/api/task/**").hasAnyRole("SUPER_ADMIN","OWNER", "ADMIN", "MEMBER")
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, 
