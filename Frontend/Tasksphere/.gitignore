@@ -1,4 +1,4 @@
-# Logs
+# --- Logs & Debugging ---
 logs
 *.log
 npm-debug.log*
@@ -7,18 +7,50 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
+# --- Dependencies ---
+node_modules/
+jspm_packages/
 
-# Editor directories and files
+# --- Build Artifacts ---
+dist/
+dist-ssr/
+build/
+out/
+.vercel
+.netlify
+
+# --- Environment Variables (CRITICAL) ---
+# Ignore the actual secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# DO NOT ignore .env.example (used to show what keys are needed)
+!.env.example
+
+# --- TypeScript ---
+*.tsbuildinfo
+
+# --- Tests & Coverage ---
+coverage/
+__snapshots__/
+
+# --- Editor / IDE ---
 .vscode/*
 !.vscode/extensions.json
-.idea
+.idea/
 .DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+*.patch
+*.diff
+
+# --- Tools ---
+.eslintcache
+.stylelintcache
+node_modules_bak/
