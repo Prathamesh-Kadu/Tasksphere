@@ -1,0 +1,11 @@
+.hamburger-btn {
+    color: #6c757d !important; /* Faint Gray */
+    transition: color 0.2s ease, transform 0.1s ease;
+    cursor: pointer;
+    background: none !important;
+    border: none !important;
+}
+
+.hamburger-btn:hover {
+    color: #000000 !important; /* Pure Black */
+}

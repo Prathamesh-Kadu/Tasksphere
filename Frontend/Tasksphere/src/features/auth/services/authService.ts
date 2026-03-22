@@ -1,4 +1,4 @@
-import { axiosClient } from "../../../api/axiosClient"
+import axiosClient from "../../../api/interceptor";
 import type { LoginRequest, LoginResponse, RegisterRequest, RegisterResponse } from "../types/auth.types"
 
 export const login = async (data: LoginRequest, signal?: AbortSignal): Promise<LoginResponse> => {
