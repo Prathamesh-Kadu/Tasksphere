@@ -39,10 +39,7 @@ public class OwnerController {
 		return new ResponseEntity<>(ownerService.getOrganizationMembers(), HttpStatus.OK);
 	}
 
-	@GetMapping("/users/search")
-	public ResponseEntity<List<UserResponse>> searchUsers(@RequestParam String name) {
-		return new ResponseEntity<>(ownerService.searchUsers(name), HttpStatus.OK);
-	}
+
 
 	@PostMapping("/members/{userId}")
 	public ResponseEntity<UserResponse> addMember(@PathVariable UUID userId) {

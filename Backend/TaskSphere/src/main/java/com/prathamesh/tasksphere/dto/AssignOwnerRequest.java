@@ -1,5 +1,6 @@
 package com.prathamesh.tasksphere.dto;
 
+import java.util.List;
 import java.util.UUID;
 
 import jakarta.validation.constraints.NotNull;
@@ -15,7 +16,7 @@ import lombok.NoArgsConstructor;
 public class AssignOwnerRequest {
 
     @NotNull(message = "User ID is required")
-    private UUID userId;
+    private List<UUID> userIds;
 
     @NotNull(message = "Organization ID is required")
     private UUID organizationId;

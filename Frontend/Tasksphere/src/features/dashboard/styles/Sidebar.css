@@ -9,3 +9,16 @@
 .hamburger-btn:hover {
     color: #000000 !important; /* Pure Black */
 }
+
+.content-wrapper {
+  width: 100%;
+  min-height: 100vh;
+  transition: margin-left 0.3s ease; 
+}
+
+@media (min-width: 992px) {
+  .content-wrapper {
+    margin-left: 20%; 
+    width: 80%;
+  }
+}

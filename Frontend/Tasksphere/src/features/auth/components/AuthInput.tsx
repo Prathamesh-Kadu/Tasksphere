@@ -21,7 +21,7 @@ export default function AuthInput({ label, type, placeholder, register, error, a
                     type={type}
                     placeholder={placeholder}
                     className={` form-control ${error ? "is-invalid" : ""}`}
-                    autoComplet={autocomplete}
+                    autoComplete={autocomplete}
                     {...register}
                 />
                 {error && <div className="invalid-feedback">{error.message}</div>}

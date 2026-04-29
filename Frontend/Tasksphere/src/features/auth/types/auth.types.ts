@@ -1,5 +1,5 @@
 import type z from "zod"
-import type { loginSchema, registerSchema } from "../Schema/auth.schema"
+import type { loginSchema, registerSchema } from "../schema/auth.schema"
 
 
 export type LoginRequest = z.infer<typeof loginSchema>
