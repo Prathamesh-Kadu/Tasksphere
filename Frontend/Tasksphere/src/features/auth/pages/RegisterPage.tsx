@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import AuthButton from "../components/AuthButton";
 import AuthInput from "../components/AuthInput";
 import AuthLayout from "../components/AuthLayout";
-import { registerSchema } from "../Schema/auth.schema";
+import { registerSchema } from "../schema/auth.schema";
 import type { RegisterRequest } from "../types/auth.types";
 import { registerUser } from "../services/authService";
 import useCancelableRequest from "../hooks/useCancelableRequest";

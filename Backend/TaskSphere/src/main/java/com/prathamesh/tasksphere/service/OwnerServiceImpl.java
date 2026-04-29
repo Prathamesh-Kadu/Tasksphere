@@ -135,14 +135,7 @@ public class OwnerServiceImpl implements OwnerService {
 				.build();
 	}
 
-	@Override
-	public List<UserResponse> searchUsers(String name) {
-
-		List<User> users = userRepository.findByOrganizationIdIsNullAndNameContainingIgnoreCase(name);
-
-		return users.stream().map(user -> UserResponse.builder().id(user.getId()).name(user.getName())
-				.email(user.getEmail()).role(user.getRole()).build()).toList();
-	}
+	
 
 	@Override
 	@Transactional

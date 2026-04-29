@@ -36,12 +36,10 @@ public class Organization {
 
     private String description;
 
-    @OneToMany(mappedBy = "organization",
-            cascade = CascadeType.ALL,
-            orphanRemoval = true)
+    @OneToMany(mappedBy = "organization")
     private List<User> users;
     
-    @OneToMany(mappedBy = "organization")
+    @OneToMany(mappedBy = "organization",cascade = CascadeType.ALL,orphanRemoval = true)
     private List<Project> projects;
 
     @Column(nullable = false, updatable = false)

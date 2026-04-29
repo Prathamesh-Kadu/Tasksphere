@@ -12,5 +12,5 @@ public interface OwnerService {
 	List<UserResponse> getOrganizationMembers();
 	UserResponse updateRole(UUID userId, String role);
 	void removeMember(UUID userId);
-	List<UserResponse> searchUsers(String name);
+	
 }

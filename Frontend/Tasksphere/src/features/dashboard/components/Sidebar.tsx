@@ -5,11 +5,18 @@ import { roleMenu } from "../config/roleMenu";
 export default function Sidebar() {
     const location = useLocation();
     const { user } = useAuth();
-    
+
     const currentRole = user?.role || "MEMBER";
     const menuItems = roleMenu[currentRole] || roleMenu["MEMBER"];
 
-    const isActive = (path: string) => location.pathname === path;
+   const isActive = (path: string) => {
+    // Exact match for Dashboard (to avoid highlighting everything)
+    if (path === "/dashboard") {
+        return location.pathname === "/dashboard";
+    }
+    // Sub-path match for everything else (e.g., /dashboard/organizations)
+    return location.pathname.startsWith(path);
+};  
 
     // HELPER: This avoids repeating the <ul> code twice
     const MenuList = () => (
@@ -18,9 +25,10 @@ export default function Sidebar() {
                 <li key={item.path} className="nav-item w-100">
                     <Link
                         to={item.path}
-                        data-bs-dismiss="offcanvas" 
+                        // FIX: Only apply dismiss attribute if the window is small
+                        {...(window.innerWidth < 992 ? { "data-bs-dismiss": "offcanvas" } : {})}
                         className={`nav-link d-flex align-items-center px-4 py-3 
-                            ${isActive(item.path) ? "bg-primary text-white" : "text-white-50 hover-effect"}`}
+                        ${isActive(item.path) ? "bg-primary text-white" : "text-white-50 hover-effect"}`}
                     >
                         <item.icon size={18} className="me-3" />
                         <span className="fw-semibold">{item.label}</span>
@@ -34,7 +42,7 @@ export default function Sidebar() {
         <>
             {/* --- 1. DESKTOP SIDEBAR  --- */}
             <div className="d-none d-lg-block flex-column vh-100 text-white shadow"
-                style={{ width: "20%", background: "#002141", position: "fixed", top: 0, left: 0, zIndex:'9999'}}
+                style={{ width: "20%", background: "#002141", position: "fixed", top: 0, left: 0, zIndex: '9999' }}
             >
                 <div className="px-4 py-4 d-flex align-items-center">
                     <span className="fs-4 fw-bold tracking-wider">TaskSphere</span>
@@ -43,10 +51,10 @@ export default function Sidebar() {
             </div>
 
             {/* --- 2. MOBILE SIDEBAR  --- */}
-            <div 
-                className="offcanvas offcanvas-start d-lg-none text-white" 
-                id="mobileSidebar" 
-                tabIndex={-1} 
+            <div
+                className="offcanvas offcanvas-start d-lg-none text-white"
+                id="mobileSidebar"
+                tabIndex={-1}
                 style={{ background: "#002141", width: "280px" }}
             >
                 <div className="offcanvas-header px-4 py-4">

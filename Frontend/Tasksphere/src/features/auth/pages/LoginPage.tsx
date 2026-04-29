@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import AuthButton from "../components/AuthButton";
 import AuthInput from "../components/AuthInput";
 import AuthLayout from "../components/AuthLayout";
-import { loginSchema } from "../Schema/auth.schema";
+import { loginSchema } from "../schema/auth.schema";
 import { login } from "../services/authService";
 import type { LoginRequest } from "../types/auth.types";
 import { saveToken } from "../../../utils/tokenStorage";
@@ -11,7 +11,7 @@ import useCancelableRequest from "../hooks/useCancelableRequest";
 
 export default function LoginPage() {
 
-    const { register, handleSubmit,reset, formState: { errors, isSubmitting } } = useForm<LoginRequest>({
+    const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<LoginRequest>({
         resolver: zodResolver(loginSchema)
     })
 

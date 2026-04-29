@@ -5,7 +5,7 @@ import { MdOutlineTaskAlt } from "react-icons/md";
 export const roleMenu: Record<string, any[]> = {
   SUPER_ADMIN: [
     { label: "Dashboard", path: "/dashboard", icon: LuLayoutDashboard },
-    { label: "Organizations", path: "/organizations", icon: GoOrganization },
+    { label: "Organizations", path: "/dashboard/org", icon: GoOrganization },
     { label: "Users", path: "/users", icon: LuUsers },
     { label: "Projects", path: "/projects", icon: LuFolderKanban },
     { label: "Tasks", path: "/tasks", icon: MdOutlineTaskAlt }
