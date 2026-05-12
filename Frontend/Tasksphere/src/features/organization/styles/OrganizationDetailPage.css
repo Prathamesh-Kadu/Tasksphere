@@ -1,0 +1,12 @@
+.hover-btn{
+    background-color: #F0F0F0;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    border: 2px solid black;
+
+}
+.hover-btn:hover{
+    background-color: black;
+    color:white;
+}
