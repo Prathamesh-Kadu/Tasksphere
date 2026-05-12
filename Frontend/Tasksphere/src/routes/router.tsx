@@ -2,11 +2,10 @@ import { createBrowserRouter } from "react-router-dom";
 import LoginPage from "../features/auth/pages/LoginPage";
 import RegisterPage from "../features/auth/pages/RegisterPage";
 import DashboardPage from "../features/dashboard/pages/DashboardPage";
-import ProtectedRoute from "./ProtectedRoute";
-import OrganizationPage from "../features/organization/pages/OrganizationPage";
-import { AppModal } from "../components/modals/AppModal";
-import { OrganizationModal } from "../features/organization/components/OrganizationModal";
 import { OrganizationDetailPage } from "../features/organization/pages/OrganizationDetailPage";
+import OrganizationPage from "../features/organization/pages/OrganizationPage";
+import ProtectedRoute from "./ProtectedRoute";
+import { UserPage } from "../features/user/pages/UserPage";
 
 const router = createBrowserRouter([
     // { path: "/", element:  },
@@ -23,8 +22,14 @@ const router = createBrowserRouter([
             {
                 element: <ProtectedRoute allowedRoles={['SUPER_ADMIN']} />,
                 children: [
-                    { path: "org", element: <OrganizationPage /> },
-                    { path: "org/:id", element: <OrganizationDetailPage /> },
+                    { path: "organizations", element: <OrganizationPage /> },
+                    { path: "organizations/:id", element: <OrganizationDetailPage /> },
+                ]
+            },
+            {
+                element: <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN', 'OWNER']} />,
+                children: [
+                    { path: "users", element: <UserPage /> }, // Your new user feature page
                 ]
             },
         ]

@@ -64,7 +64,7 @@ export default function OrganizationPage() {
 
     // ----------- View Organization Details ---------------
     const handleView = (id: string) => {
-        navigate(`/dashboard/org/${id}`);
+        navigate(`/dashboard/organizations/${id}`);
     }
 
     return (
@@ -84,7 +84,7 @@ export default function OrganizationPage() {
                     <div className="input-group">
                         <input
                             type="text"
-                            className="form-control"
+                            className="form-control "
                             placeholder="Search organization"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}

@@ -5,3 +5,11 @@ export interface PageResponse<T> {
     size: number;
     number: number;
 }
+
+export interface UserResponse {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+    organizationName?: string;
+}

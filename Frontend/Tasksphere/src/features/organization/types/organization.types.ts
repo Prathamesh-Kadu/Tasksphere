@@ -1,16 +1,12 @@
 import type z from "zod";
 import type { organizationSchema } from "../schemas/organization.schema";
+import type { UserResponse } from "../../../types/common.types";
 
 
 
 export type OrganizationRequest = z.infer<typeof organizationSchema>
 
-export interface UserResponse {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-}
+
 export interface OrganizationResponse {
   id: string;
   name: string;
