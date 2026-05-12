@@ -1,12 +1,12 @@
-import { AppModal } from "../../../components/modals/AppModal";
-import { TbLoader2, TbSearch, TbX, TbUserPlus, TbShieldPlus } from "react-icons/tb";
-import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import ButtonLoader from "../../../components/loader/ButtonLoader";
-import type { UserResponse } from "../../../types/common.types";
-import { getUsersBySearch } from "../../../services/commonService";
-import { addUserToOrg } from "../services/userService";
+import { useState } from "react";
+import { TbLoader2, TbSearch, TbUserPlus, TbX } from "react-icons/tb";
 import { useDebounce } from "use-debounce";
+import ButtonLoader from "../../../components/loader/ButtonLoader";
+import { AppModal } from "../../../components/modals/AppModal";
+import { getUsersBySearch } from "../../../services/commonService";
+import type { UserResponse } from "../../../types/common.types";
+import { addUserToOrg } from "../services/userService";
 
 interface AddMemberModalProps {
     show: boolean;
