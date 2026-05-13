@@ -3,11 +3,11 @@ import { useForm } from "react-hook-form";
 import AuthButton from "../components/AuthButton";
 import AuthInput from "../components/AuthInput";
 import AuthLayout from "../components/AuthLayout";
-import { loginSchema } from "../schema/auth.schema";
 import { login } from "../services/authService";
 import type { LoginRequest } from "../types/auth.types";
 import { saveToken } from "../../../utils/tokenStorage";
 import useCancelableRequest from "../hooks/useCancelableRequest";
+import { loginSchema } from "../schema/auth.schema";
 
 export default function LoginPage() {
 

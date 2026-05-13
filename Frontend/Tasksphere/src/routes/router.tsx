@@ -2,6 +2,8 @@ import { createBrowserRouter } from "react-router-dom";
 import LoginPage from "../features/auth/pages/LoginPage";
 import RegisterPage from "../features/auth/pages/RegisterPage";
 import DashboardPage from "../features/dashboard/pages/DashboardPage";
+import ProtectedRoute from "./ProtectedRoute";
+import OrganizationPage from "../features/organization/pages/OrganizationPage";
 import { OrganizationDetailPage } from "../features/organization/pages/OrganizationDetailPage";
 import OrganizationPage from "../features/organization/pages/OrganizationPage";
 import ProtectedRoute from "./ProtectedRoute";
