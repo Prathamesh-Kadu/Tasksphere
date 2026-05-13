@@ -5,8 +5,6 @@ import DashboardPage from "../features/dashboard/pages/DashboardPage";
 import ProtectedRoute from "./ProtectedRoute";
 import OrganizationPage from "../features/organization/pages/OrganizationPage";
 import { OrganizationDetailPage } from "../features/organization/pages/OrganizationDetailPage";
-import OrganizationPage from "../features/organization/pages/OrganizationPage";
-import ProtectedRoute from "./ProtectedRoute";
 import { UserPage } from "../features/user/pages/UserPage";
 
 const router = createBrowserRouter([
