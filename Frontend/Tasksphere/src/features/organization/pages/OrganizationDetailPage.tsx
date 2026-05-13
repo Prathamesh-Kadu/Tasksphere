@@ -43,7 +43,7 @@ export const OrganizationDetailPage = () => {
         <div className="container-fluid">
             <div className="mb-3">
                 <button
-                    onClick={() => navigate("/dashboard/org")}
+                    onClick={() => navigate("/dashboard/organizations")}
                     className="btn btn-link text-decoration-none p-0 d-flex align-items-center gap-1 text-muted hover-primary"
                 >
                     <FaArrowLeft /> Back to Organizations
@@ -64,7 +64,7 @@ export const OrganizationDetailPage = () => {
                     </button>
                 </div>
             </div>
-            
+
             {/* Organization Details */}
             <div className="row mt-4 p-2" style={{ borderRadius: "0.3rem", boxShadow: "0 10px 25px 1px rgba(0, 0, 0, 0.15)" }}>
                 <div className="col-12">

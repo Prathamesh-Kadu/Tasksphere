@@ -63,32 +63,32 @@ public class OwnerServiceImpl implements OwnerService {
 
 		return dto;
 	}
-
-	@Override
-	@Transactional
-	public UserResponse addMember(UUID userId) {
-
-		User logged = getLoggedInUser();
-		UUID orgId = getOrgIdOrThrow(logged);
-
-		User existUser = userRepository.findById(userId)
-				.orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
-
-		if (existUser.getOrganization() != null) {
-			throw new OrganizationAlreadyExistsException(
-					"User already part of an organization name: " + existUser.getOrganization().getName());
-		}
-
-		Organization organization = organizationRepository.findById(orgId)
-				.orElseThrow(() -> new ResourceNotFoundException("Organization not found"));
-
-		existUser.setOrganization(organization);
-		existUser.setRole(Role.MEMBER);
-
-		User user = userRepository.save(existUser);
-		return UserResponse.builder().id(user.getId()).name(user.getName()).email(user.getEmail()).role(user.getRole())
-				.build();
-	}
+//
+//	@Override
+//	@Transactional
+//	public UserResponse addMember(UUID userId) {
+//
+//		User logged = getLoggedInUser();
+//		UUID orgId = getOrgIdOrThrow(logged);
+//
+//		User existUser = userRepository.findById(userId)
+//				.orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
+//
+//		if (existUser.getOrganization() != null) {
+//			throw new OrganizationAlreadyExistsException(
+//					"User already part of an organization name: " + existUser.getOrganization().getName());
+//		}
+//
+//		Organization organization = organizationRepository.findById(orgId)
+//				.orElseThrow(() -> new ResourceNotFoundException("Organization not found"));
+//
+//		existUser.setOrganization(organization);
+//		existUser.setRole(Role.MEMBER);
+//
+//		User user = userRepository.save(existUser);
+//		return UserResponse.builder().id(user.getId()).name(user.getName()).email(user.getEmail()).role(user.getRole())
+//				.build();
+//	}
 
 	@Override
 	public List<UserResponse> getOrganizationMembers() {

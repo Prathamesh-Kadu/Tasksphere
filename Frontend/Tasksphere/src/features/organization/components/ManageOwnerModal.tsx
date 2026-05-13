@@ -1,10 +1,12 @@
 import { AppModal } from "../../../components/modals/AppModal";
-import type { OrganizationResponse, UserResponse } from "../types/organization.types";
+import type { OrganizationResponse } from "../types/organization.types";
 import { TbLoader2, TbSearch, TbX } from "react-icons/tb";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { assignOwner, getUsersBySearch } from "../services/organizationService";
+import { assignOwner } from "../services/organizationService";
 import ButtonLoader from "../../../components/loader/ButtonLoader";
+import type { UserResponse } from "../../../types/common.types";
+import { getUsersBySearch } from "../../../services/commonService";
 
 interface ManageOwnerModalProps {
     show: boolean;
@@ -20,7 +22,7 @@ export const ManageOwnerModal = ({ show, handleClose, organization: org }: Manag
     // ------------ Get User By Search -------------
     const { data, isFetching } = useQuery({
         queryKey: ['users-search', search],
-        queryFn: () => getUsersBySearch(search, 0, 5),
+        queryFn: () => getUsersBySearch(search || " ", 0, 5),
         enabled: search.length >= 2,
     });
 

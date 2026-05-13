@@ -39,12 +39,12 @@ public class OwnerController {
 		return new ResponseEntity<>(ownerService.getOrganizationMembers(), HttpStatus.OK);
 	}
 
-
-
-	@PostMapping("/members/{userId}")
-	public ResponseEntity<UserResponse> addMember(@PathVariable UUID userId) {
-		return new ResponseEntity<>(ownerService.addMember(userId), HttpStatus.OK);
-	}
+//
+//
+//	@PostMapping("/members/{userId}")
+//	public ResponseEntity<UserResponse> addMember(@PathVariable UUID userId) {
+//		return new ResponseEntity<>(ownerService.addMember(userId), HttpStatus.OK);
+//	}
 
 	@PutMapping("/members/{id}/{role}")
 	public ResponseEntity<UserResponse> updateRole(@PathVariable UUID id, @PathVariable String role) {

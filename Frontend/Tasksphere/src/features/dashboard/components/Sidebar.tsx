@@ -9,23 +9,20 @@ export default function Sidebar() {
     const currentRole = user?.role || "MEMBER";
     const menuItems = roleMenu[currentRole] || roleMenu["MEMBER"];
 
-   const isActive = (path: string) => {
-    // Exact match for Dashboard (to avoid highlighting everything)
-    if (path === "/dashboard") {
-        return location.pathname === "/dashboard";
-    }
-    // Sub-path match for everything else (e.g., /dashboard/organizations)
-    return location.pathname.startsWith(path);
-};  
+    const isActive = (path: string) => {
+        const currentPath = location.pathname;
+        if (path === "/dashboard") {
+            return currentPath === "/dashboard";
+        }
+        return currentPath === path || currentPath.startsWith(`${path}/`);
+    };
 
-    // HELPER: This avoids repeating the <ul> code twice
     const MenuList = () => (
         <ul className="nav mt-2 flex-column">
             {menuItems.map((item) => (
                 <li key={item.path} className="nav-item w-100">
                     <Link
                         to={item.path}
-                        // FIX: Only apply dismiss attribute if the window is small
                         {...(window.innerWidth < 992 ? { "data-bs-dismiss": "offcanvas" } : {})}
                         className={`nav-link d-flex align-items-center px-4 py-3 
                         ${isActive(item.path) ? "bg-primary text-white" : "text-white-50 hover-effect"}`}
