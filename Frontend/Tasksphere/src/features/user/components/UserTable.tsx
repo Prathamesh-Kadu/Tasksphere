@@ -1,92 +1,128 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Badge } from "react-bootstrap";
-import { FaUserShield } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import ButtonLoader from "../../../components/loader/ButtonLoader";
 import { AppModal } from "../../../components/modals/AppModal";
-import { removeUserFromOrg } from "../services/userService";
+import { removeUserFromOrg, removeUserFromProject } from "../services/userService";
+import type { UserResponse } from "../../../types/common.types";
 
 interface UserTableProps {
-    users: any[];
+    users: UserResponse[];
     loggedUserRole: string;
 }
 
 export const UserTable = ({ users, loggedUserRole }: UserTableProps) => {
-
     const queryClient = useQueryClient();
-
     const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
+    // Dynamic checks to keep JSX cleaner
+    const isOwner = loggedUserRole === "OWNER";
+    const isAdmin = loggedUserRole === "ADMIN";
+    const isSuperAdmin = loggedUserRole === "SUPER_ADMIN";
+    const canModify = isOwner || isAdmin;
+
     const deleteMutation = useMutation({
-        mutationFn: (userId: string) => removeUserFromOrg(userId),
+        mutationFn: (userId: string) => {
+            return isOwner ? removeUserFromOrg(userId) : removeUserFromProject(userId);
+        },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["users"] });
-            setDeleteTargetId(null); // Close modal
+            setDeleteTargetId(null);
         },
         onError: (error) => {
-            console.error("Failed to remove member", error);
+            console.error(`Failed to remove member from ${isOwner ? 'organization' : 'project'}`, error);
         },
     });
 
     return (
-        <div className="container">
+        <>
             <div className="row">
                 <div className="col-12 pt-3">
-                    {users.length == 0 ? <div className="text-center bg-white p-3 shadow">No member found</div> :
-                        <table className="table table-bordered text-center" style={{ borderColor: "#dee2e6" }}>
+                    {users.length === 0 ? (
+                        <div className="text-center bg-white shadow p-4 rounded text-muted">No members found</div>
+                    ) : (
+                        <table className="table table-bordered text-center align-middle" style={{ borderColor: "#dee2e6" }}>
                             <thead className="table-light">
                                 <tr>
                                     <th>Name</th>
                                     <th>Email</th>
                                     <th>Role</th>
-                                    {loggedUserRole === "SUPER_ADMIN" && <th>Organization</th>}
-                                    {loggedUserRole === "OWNER" && <th>Actions</th>}
+                                    {isSuperAdmin && <th>Organization</th>}
+                                    {loggedUserRole !== "ADMIN" && <th>Projects</th>}
+                                    {canModify && <th>Actions</th>}
                                 </tr>
                             </thead>
 
                             <tbody>
-                                {users.map((user) => (
-                                    <tr key={user.id}>
-                                        <td>{user.name}</td>
-                                        <td>{user.email}</td>
-                                        <td>
-                                            <Badge bg="primary">{user.role}</Badge>
-                                        </td>
-                                        {loggedUserRole === "SUPER_ADMIN" && (
-                                            <td>{user.organizationName || "N/A"}</td>
-                                        )}
-                                        {loggedUserRole === "OWNER" && (
+                                {users.map((user) => {
+                                    const isRowUserAdmin = user.role === "ADMIN";
+
+                                    return (
+                                        <tr key={user.id}>
+                                            <td>{user.name}</td>
+                                            <td>{user.email}</td>
                                             <td>
-                                                <MdDelete
-                                                    onClick={() => setDeleteTargetId(user.id)}
-                                                    size={24}
-                                                    style={{ cursor: "pointer" }}
-                                                    className="text-danger"
-                                                />
-                                                <FaUserShield
-                                                    size={21}
-                                                    style={{ cursor: "pointer", color:"#002141", marginLeft:"0.3rem"}}
-                                                />
+                                                <Badge bg="primary">{user.role}</Badge>
                                             </td>
-                                        )}
-                                    </tr>
-                                ))}
+                                            {isSuperAdmin && (
+                                                <td>{user.organizationName || "N/A"}</td>
+                                            )}
+                                            {loggedUserRole !== "ADMIN" && (
+                                                <td>
+                                                    {user.projectNames && user.projectNames.length > 0
+                                                        ? user.projectNames.join(", ")
+                                                        : "N/A"}
+                                                </td>
+                                            )}
+                                            {canModify && (
+                                                <td>
+                                                    <MdDelete
+                                                        onClick={() => {
+                                                            if (!isRowUserAdmin) {
+                                                                setDeleteTargetId(user.id);
+                                                            }
+                                                        }}
+                                                        size={24}
+                                                        style={{
+                                                            cursor: isRowUserAdmin ? "not-allowed" : "pointer",
+                                                            opacity: isRowUserAdmin ? 0.4 : 1
+                                                        }}
+                                                        className={isRowUserAdmin ? "text-secondary" : "text-danger"}
+                                                        title={
+                                                            isRowUserAdmin
+                                                                ? "Administrators cannot be removed"
+                                                                : (isOwner ? "Remove from Organization" : "Remove from Project")
+                                                        }
+                                                    />
+                                                </td>
+                                            )}
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
-                        </table>}
+                        </table>
+                    )}
                 </div>
             </div>
 
+            {/* Dynamic Confirmation Modal */}
             {deleteTargetId && (
                 <AppModal
                     show={!!deleteTargetId}
                     handleClose={() => setDeleteTargetId(null)}
-                    title="Confirm Removal"
+                    title={isOwner ? "Confirm Organization Removal" : "Confirm Project Removal"}
                 >
                     <div className="text-center py-2">
-                        <p className="fw-bold text-danger">Remove member from organization?</p>
+                        <p className="fw-bold text-danger">
+                            {isOwner ? "Remove member from organization?" : "Remove member from project?"}
+                        </p>
                         <p className="text-muted small">
-                            This user will lose access to all <strong>projects and tasks</strong>.
+                            {isOwner ? (
+                                <>This user will completely lose access to the organization, including all its <strong>projects and tasks</strong>.</>
+                            ) : (
+                                <>This user will lose access to this project, and all their <strong>assigned tasks within this project</strong> will be deleted. They will remain in the organization.</>
+                            )}
                         </p>
                     </div>
 
@@ -99,15 +135,19 @@ export const UserTable = ({ users, loggedUserRole }: UserTableProps) => {
                             Cancel
                         </button>
                         <button
-                            className="btn btn-danger"
+                            className="btn btn-danger px-4"
                             onClick={() => deleteMutation.mutate(deleteTargetId)}
                             disabled={deleteMutation.isPending}
                         >
-                            {deleteMutation.isPending ? <>"Removing"<ButtonLoader /></> : "Remove Member"}
+                            {deleteMutation.isPending ? (
+                                <><ButtonLoader /> Removing...</>
+                            ) : (
+                                isOwner ? "Remove Member" : "Remove from Project"
+                            )}
                         </button>
                     </div>
                 </AppModal>
             )}
-        </div>
+        </>
     );
 };

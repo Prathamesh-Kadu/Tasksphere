@@ -1,5 +1,6 @@
 package com.prathamesh.tasksphere.dto;
 
+import java.util.List;
 import java.util.UUID;
 
 import com.prathamesh.tasksphere.model.Role;
@@ -19,4 +20,5 @@ public class UserResponse {
 	private String email;
 	private Role role;
 	private String organizationName;
+	private List<String> projectNames;
 }

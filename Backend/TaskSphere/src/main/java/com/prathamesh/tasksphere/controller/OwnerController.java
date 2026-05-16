@@ -9,10 +9,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.prathamesh.tasksphere.dto.OrganizationResponse;
@@ -39,17 +36,6 @@ public class OwnerController {
 		return new ResponseEntity<>(ownerService.getOrganizationMembers(), HttpStatus.OK);
 	}
 
-//
-//
-//	@PostMapping("/members/{userId}")
-//	public ResponseEntity<UserResponse> addMember(@PathVariable UUID userId) {
-//		return new ResponseEntity<>(ownerService.addMember(userId), HttpStatus.OK);
-//	}
-
-	@PutMapping("/members/{id}/{role}")
-	public ResponseEntity<UserResponse> updateRole(@PathVariable UUID id, @PathVariable String role) {
-		return new ResponseEntity<>(ownerService.updateRole(id, role), HttpStatus.OK);
-	}
 
 	@DeleteMapping("/members/{id}")
 	public ResponseEntity<Void> removeMember(@PathVariable UUID id) {

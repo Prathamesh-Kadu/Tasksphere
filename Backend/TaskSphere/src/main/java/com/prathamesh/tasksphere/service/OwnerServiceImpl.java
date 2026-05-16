@@ -1,8 +1,6 @@
 package com.prathamesh.tasksphere.service;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.security.core.Authentication;
@@ -13,9 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.prathamesh.tasksphere.dto.OrganizationResponse;
 import com.prathamesh.tasksphere.dto.UserResponse;
 import com.prathamesh.tasksphere.exception.IllegalActionException;
-import com.prathamesh.tasksphere.exception.OrganizationAlreadyExistsException;
 import com.prathamesh.tasksphere.exception.ResourceNotFoundException;
-import com.prathamesh.tasksphere.exception.RoleAssignmentException;
 import com.prathamesh.tasksphere.exception.UnlinkedUserException;
 import com.prathamesh.tasksphere.model.Organization;
 import com.prathamesh.tasksphere.model.Role;
@@ -63,32 +59,6 @@ public class OwnerServiceImpl implements OwnerService {
 
 		return dto;
 	}
-//
-//	@Override
-//	@Transactional
-//	public UserResponse addMember(UUID userId) {
-//
-//		User logged = getLoggedInUser();
-//		UUID orgId = getOrgIdOrThrow(logged);
-//
-//		User existUser = userRepository.findById(userId)
-//				.orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
-//
-//		if (existUser.getOrganization() != null) {
-//			throw new OrganizationAlreadyExistsException(
-//					"User already part of an organization name: " + existUser.getOrganization().getName());
-//		}
-//
-//		Organization organization = organizationRepository.findById(orgId)
-//				.orElseThrow(() -> new ResourceNotFoundException("Organization not found"));
-//
-//		existUser.setOrganization(organization);
-//		existUser.setRole(Role.MEMBER);
-//
-//		User user = userRepository.save(existUser);
-//		return UserResponse.builder().id(user.getId()).name(user.getName()).email(user.getEmail()).role(user.getRole())
-//				.build();
-//	}
 
 	@Override
 	public List<UserResponse> getOrganizationMembers() {
@@ -102,38 +72,7 @@ public class OwnerServiceImpl implements OwnerService {
 				.name(user.getName()).role(user.getRole()).build()).toList();
 	}
 
-	@Override
-	@Transactional
-	public UserResponse updateRole(UUID userId, String role) {
-
-		Set<String> roles = new HashSet<>(Set.of("OWNER", "ADMIN", "MEMBER", "SUPER_ADMIN"));
-		if (!roles.contains(role)) {
-			throw new RoleAssignmentException(role + " is not a valid role.");
-		}
-
-		User logged = getLoggedInUser();
-		UUID orgId = getOrgIdOrThrow(logged);
-
-		User target = userRepository.findByIdAndOrganizationId(userId, orgId)
-				.orElseThrow(() -> new UnlinkedUserException("User not in part of your organization"));
-
-		if (target.getRole() == Role.OWNER) {
-			throw new RoleAssignmentException("Cannot modify OWNER role");
-		}
-
-		Role newRole = Role.valueOf(role);
-
-		if (newRole == Role.OWNER) {
-			throw new RoleAssignmentException("Cannot assign OWNER role");
-		} else if (newRole == Role.SUPER_ADMIN) {
-			throw new RoleAssignmentException("Cannot assign Super_Admin role");
-		}
-		target.setRole(newRole);
-
-		User user = userRepository.save(target);
-		return UserResponse.builder().id(user.getId()).email(user.getEmail()).name(user.getName()).role(user.getRole())
-				.build();
-	}
+	
 
 	
 

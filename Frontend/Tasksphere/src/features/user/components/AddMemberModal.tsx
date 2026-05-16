@@ -4,37 +4,59 @@ import { TbLoader2, TbSearch, TbUserPlus, TbX } from "react-icons/tb";
 import { useDebounce } from "use-debounce";
 import ButtonLoader from "../../../components/loader/ButtonLoader";
 import { AppModal } from "../../../components/modals/AppModal";
+import useAuth from "../../../hooks/useAuth";
 import { getUsersBySearch } from "../../../services/commonService";
 import type { UserResponse } from "../../../types/common.types";
-import { addUserToOrg } from "../services/userService";
+import { addUserToOrg, addUserToProject } from "../services/userService";
 
 interface AddMemberModalProps {
     show: boolean;
     handleClose: () => void;
+    existingMembers: any[];
 }
 
-export const AddMemberModal = ({ show, handleClose }: AddMemberModalProps) => {
+export const AddMemberModal = ({ show, handleClose, existingMembers }: AddMemberModalProps) => {
     const [search, setSearch] = useState("");
     const [selectedUsers, setSelectedUsers] = useState<UserResponse[]>([]);
     const queryClient = useQueryClient();
     const [showUserList, setShowUserList] = useState<boolean>(false);
     const [debouncedSearch] = useDebounce(search, 1000);
+    const { role } = useAuth();
 
 
-    // ------------ Get User By Search -------------
+    // ------------ Dynamic User Search -------------
     const { data, isFetching } = useQuery({
-        queryKey: ['users-available', debouncedSearch],
-        queryFn: () => getUsersBySearch(debouncedSearch || " ", 0, 5),
-        enabled: show && showUserList,
+
+        queryKey: [role === "ADMIN" ? 'org-members-search' : 'global-users-search', debouncedSearch],
+
+        queryFn: () =>
+            getUsersBySearch(debouncedSearch || " ", 0, 5),
+
+        enabled: show && showUserList && !!role,
     });
 
-    // ------------ Add user to organization -------------
     const { mutate, isPending } = useMutation({
-        mutationFn: () => addUserToOrg(selectedUsers.map(u => u.id)),
+        mutationFn: () => {
+            const userIds = selectedUsers.map(u => u.id);
+
+            if (role === "ADMIN") {
+                // Admin adds to specific project
+                return addUserToProject(userIds);
+            } else {
+                return addUserToOrg(userIds);
+            }
+        },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["users"] }); // Refresh member list
+            if (role === "ADMIN") {
+                queryClient.invalidateQueries({ queryKey: ["projects"] });
+            }
+            queryClient.invalidateQueries({ queryKey: ["users"] });
+
             handleClose();
             setSelectedUsers([]);
+        },
+        onError: (err) => {
+            console.error("Failed to add members", err);
         }
     });
 
@@ -50,8 +72,18 @@ export const AddMemberModal = ({ show, handleClose }: AddMemberModalProps) => {
         setSelectedUsers(prev => prev.filter(u => u.id !== userId));
     };
 
+
+    const visibleFilteredUsers = data?.content?.filter((user: UserResponse) => {
+        const isSelected = selectedUsers.some(s => s.id === user.id);
+        const isAlreadyMember = existingMembers.some(m => m.id === user.id);
+        const isOwner = user.role === "OWNER";
+
+        return !isSelected && !isAlreadyMember && !isOwner;
+    }) || [];
+
+    const isSearchEmpty = !isFetching && search === "" && data?.totalElements === 0;
     return (
-        <AppModal show={show} handleClose={handleClose} title="Add Members to Organization">
+        <AppModal show={show} handleClose={handleClose} title={role === "ADMIN" ? "Add Members to Project" : "Add Members to Organization"}>
 
             {/* Search Input */}
             <div className="position-relative mb-3">
@@ -62,7 +94,8 @@ export const AddMemberModal = ({ show, handleClose }: AddMemberModalProps) => {
                     <input
                         type="text"
                         className="form-control border-start-0"
-                        placeholder="Search users by name"
+                        placeholder={isSearchEmpty ? "No available users to add" : "Search users by name"}
+                        disabled={isSearchEmpty}
                         value={search}
                         onFocus={() => setShowUserList(true)}
                         onChange={(e) => {
@@ -75,7 +108,8 @@ export const AddMemberModal = ({ show, handleClose }: AddMemberModalProps) => {
                 {/* Dropdown Results */}
                 {showUserList && data?.content && (
                     <div className="list-group position-absolute w-100 shadow-lg mt-1" style={{ zIndex: 1050, maxHeight: '200px', overflowY: 'auto' }}>
-                        {data.content.filter(u => !selectedUsers.some(s => s.id === u.id)).map((user: UserResponse) => (
+
+                        {visibleFilteredUsers.map((user: UserResponse) => (
                             <button
                                 key={user.id}
                                 type="button"
@@ -89,7 +123,12 @@ export const AddMemberModal = ({ show, handleClose }: AddMemberModalProps) => {
                                 <TbUserPlus className="text-primary" size={20} />
                             </button>
                         ))}
-                        {data.content.length === 0 && <div className="list-group-item small text-center text-muted">No available users found</div>}
+
+                        {visibleFilteredUsers.length === 0 && !isFetching && (
+                            <div className="list-group-item small text-center text-muted py-3">
+                                {search ? "No new matching users found" : "All fetched users are already added"}
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
@@ -115,7 +154,7 @@ export const AddMemberModal = ({ show, handleClose }: AddMemberModalProps) => {
                     onClick={() => mutate()}
                     disabled={selectedUsers.length === 0 || isPending}
                 >
-                    {isPending ? <><ButtonLoader /> Adding...</> : "Add to Organization"}
+                    {isPending ? <><ButtonLoader /> Adding...</> : (role === "OWNER"? "Add to Organization" : "Add to Project")}
                 </button>
             </div>
         </AppModal>
