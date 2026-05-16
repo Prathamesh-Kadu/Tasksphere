@@ -7,6 +7,7 @@ import { deleteProject } from "../services/projectService";
 import type { Project, ProjectReponse } from "../types/project.types";
 import { FaUserShield } from "react-icons/fa";
 import { AssignAdminModal } from "./AssignAdminModal";
+import { Badge } from "react-bootstrap";
 
 interface ProjectTableProps {
     projects: ProjectReponse[];
@@ -15,11 +16,10 @@ interface ProjectTableProps {
 }
 
 export const ProjectTable = ({ projects, loggedUserRole, onEdit }: ProjectTableProps) => {
-
     const queryClient = useQueryClient();
 
-    const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-
+    // Changed typing to accept ProjectReponse so admin names aren't lost
+    const [selectedProject, setSelectedProject] = useState<ProjectReponse | null>(null);
     const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
@@ -30,7 +30,6 @@ export const ProjectTable = ({ projects, loggedUserRole, onEdit }: ProjectTableP
         },
     });
 
-    // ---------- Date formatter ------------
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
         return new Intl.DateTimeFormat('en-GB', {
@@ -46,25 +45,29 @@ export const ProjectTable = ({ projects, loggedUserRole, onEdit }: ProjectTableP
 
     const handleCloseModal = () => {
         setIsModalOpen(false);
+        setSelectedProject(null);
     };
 
     const confirmDelete = () => {
         if (deleteTargetId) {
             deleteMutation.mutate(deleteTargetId);
         }
-        setDeleteTargetId(null)
+        setDeleteTargetId(null);
     };
 
     return (
         <div className="container">
             <div className="row">
                 <div className="col-12 pt-3">
-                    {projects.length == 0 ? <div className="text-center bg-white p-3 shadow">No project found</div> :
+                    {projects.length === 0 ? (
+                        <div className="text-center bg-white p-3 shadow">No project found</div>
+                    ) : (
                         <table className="table table-bordered text-center" style={{ borderColor: "#dee2e6" }}>
                             <thead className="table-light">
                                 <tr>
                                     <th>Name</th>
                                     <th>Description</th>
+                                    <th>Assigned Admins</th> {/* New visual feedback column */}
                                     {loggedUserRole === "SUPER_ADMIN" && <th>Organization</th>}
                                     <th>Created On</th>
                                     {loggedUserRole === "OWNER" && <th>Actions</th>}
@@ -76,6 +79,13 @@ export const ProjectTable = ({ projects, loggedUserRole, onEdit }: ProjectTableP
                                     <tr key={p.id}>
                                         <td>{p.name}</td>
                                         <td>{p.description}</td>
+                                        <td>
+                                            {p.admins && p.admins.length > 0 ? (
+                                                <Badge bg="primary">{p.admins.join(", ")}</Badge>
+                                            ) : (
+                                                <span className="text-muted small">None Assigned</span>
+                                            )}
+                                        </td>
                                         {loggedUserRole === "SUPER_ADMIN" && (
                                             <td>{p.organizationName || "N/A"}</td>
                                         )}
@@ -91,14 +101,15 @@ export const ProjectTable = ({ projects, loggedUserRole, onEdit }: ProjectTableP
                                                 <BiSolidEdit
                                                     size={20}
                                                     style={{ cursor: "pointer" }}
-                                                    onClick={() => onEdit?.(p as Project)}
+                                                    onClick={() => onEdit?.(p as unknown as Project)}
                                                 />
                                                 <FaUserShield
                                                     size={20}
                                                     style={{ cursor: "pointer", color: "#002141" }}
+                                                    title="Manage Admins"
                                                     onClick={() => {
+                                                        setSelectedProject(p); // Keeps the whole item state loaded
                                                         setIsModalOpen(true);
-                                                        setSelectedProject(p);
                                                     }}
                                                 />
                                             </td>
@@ -106,18 +117,20 @@ export const ProjectTable = ({ projects, loggedUserRole, onEdit }: ProjectTableP
                                     </tr>
                                 ))}
                             </tbody>
-                        </table>}
+                        </table>
+                    )}
                 </div>
             </div>
 
-
-
-            {isModalOpen && <AssignAdminModal
-                show={isModalOpen}
-                handleClose={handleCloseModal}
-                projectId={selectedProject?.id || ""}
-            />}
-
+            {/* --- Open Modal with Current Admin States Context Injection --- */}
+            {isModalOpen && selectedProject && (
+                <AssignAdminModal
+                    show={isModalOpen}
+                    handleClose={handleCloseModal}
+                    projectId={selectedProject.id}
+                    currentAdmins={selectedProject.admins || []} // Injected safely here!
+                />
+            )}
 
             {deleteTargetId && (
                 <AppModal
@@ -128,12 +141,10 @@ export const ProjectTable = ({ projects, loggedUserRole, onEdit }: ProjectTableP
                     <div className="text-center py-2">
                         <i className="bi bi-exclamation-triangle text-danger" style={{ fontSize: "2rem" }}></i>
                         <p className="fw-bold text-danger mt-2">Permanently delete this project?</p>
-
                         <p className="text-muted small">
                             You are about to remove this project and all <strong>associated tasks</strong>.
                             This action cannot be undone.
                         </p>
-
                         <div className="alert alert-info py-2 small border-0">
                             <i className="bi bi-info-circle me-2"></i>
                             Project members will lose access to these tasks but their accounts will remain active.

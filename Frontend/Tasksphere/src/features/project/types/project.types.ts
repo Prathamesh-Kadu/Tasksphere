@@ -11,6 +11,7 @@ export interface ProjectReponse {
     description: string;
     organizationName: string;
     createdAt: string;
+    admins: string[];
 }
 
 export interface Project {

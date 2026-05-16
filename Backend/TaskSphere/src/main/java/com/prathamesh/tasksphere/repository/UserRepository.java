@@ -43,4 +43,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 	@Query("SELECT DISTINCT u FROM User u " + "JOIN u.projects p " + "JOIN p.members m " + "WHERE m.id = :memberId "
 			+ "AND (:name IS NULL OR LOWER(u.name) LIKE LOWER(CONCAT('%', :name, '%')))")
 	Page<User> searchInProjectByMember(@Param("memberId") UUID memberId, @Param("name") String name, Pageable pageable);
+	
+	@Query("SELECT u.name FROM User u JOIN u.projects p WHERE p.id = :projectId AND u.role = 'ADMIN'")
+    List<String> findAdminNamesByProjectId(@Param("projectId") UUID projectId);
 }

@@ -97,10 +97,19 @@ public class ProjectServiceImpl implements ProjectService {
 		}
 
 		return projectPage.map(p -> {
+
+			List<String> adminNames = userRepository.findAdminNamesByProjectId(p.getId());
+
+			if (adminNames == null) {
+				adminNames = List.of();
+			}
+
 			ProjectResponse.ProjectResponseBuilder builder = ProjectResponse.builder().createdAt(p.getCreatedAt())
-					.id(p.getId()).name(p.getName()).description(p.getDescription());
+					.id(p.getId()).name(p.getName()).description(p.getDescription()).admins(adminNames);
 
 			if (user.getRole() == Role.SUPER_ADMIN && p.getOrganization() != null) {
+				builder.organizationName(p.getOrganization().getName());
+			} else if (p.getOrganization() != null) {
 				builder.organizationName(p.getOrganization().getName());
 			}
 
@@ -161,84 +170,84 @@ public class ProjectServiceImpl implements ProjectService {
 	@Override
 	@Transactional
 	public void assignMemberToProject(List<UUID> userIds) {
-	    // 1. Authenticate context
-	    User loggedAdmin = getLoggedInUser();
-	    UUID orgId = getOrgIdOrThrow(loggedAdmin);
+		// 1. Authenticate context
+		User loggedAdmin = getLoggedInUser();
+		UUID orgId = getOrgIdOrThrow(loggedAdmin);
 
-	    // 2. Fetch project metadata (Safe: no collection is modified or read here)
-	    Project project = projectRepository.findProjectByAdminMember(loggedAdmin.getId(), orgId)
-	            .orElseThrow(() -> new ResourceNotFoundException("No project found assigned to this Admin"));
-	    
-	    // 3. Collect targeted users
-	    List<User> usersToAdd = userRepository.findAllById(userIds);
-	    
-	    // 4. Validate organization bounds across all targets
-	    for (User user : usersToAdd) {
-	        if (user.getOrganization() == null || !user.getOrganization().getId().equals(orgId)) {
-	            throw new UnlinkedUserException("User " + user.getName() + " is not part of your organization");
-	        }
-	    }
+		// 2. Fetch project metadata (Safe: no collection is modified or read here)
+		Project project = projectRepository.findProjectByAdminMember(loggedAdmin.getId(), orgId)
+				.orElseThrow(() -> new ResourceNotFoundException("No project found assigned to this Admin"));
 
-	    // 5. Insert relationship mappings directly into the join table row-by-row
-	    for (User user : usersToAdd) {
-	        projectRepository.addMemberLink(project.getId(), user.getId());
-	    }
-	    
-	    // Crucial: Remove projectRepository.save(project) completely!
-	    // The Direct native queries execute adjustments on the tables immediately.
+		// 3. Collect targeted users
+		List<User> usersToAdd = userRepository.findAllById(userIds);
+
+		// 4. Validate organization bounds across all targets
+		for (User user : usersToAdd) {
+			if (user.getOrganization() == null || !user.getOrganization().getId().equals(orgId)) {
+				throw new UnlinkedUserException("User " + user.getName() + " is not part of your organization");
+			}
+		}
+
+		// 5. Insert relationship mappings directly into the join table row-by-row
+		for (User user : usersToAdd) {
+			projectRepository.addMemberLink(project.getId(), user.getId());
+		}
+
+		// Crucial: Remove projectRepository.save(project) completely!
+		// The Direct native queries execute adjustments on the tables immediately.
 	}
+
 	@Override
 	@Transactional
 	public void assignAdminToProject(AssignAdminRequest request) {
 		User currentUser = getLoggedInUser();
 		UUID orgId = getOrgIdOrThrow(currentUser);
 
+		
 		Project project = projectRepository.findByIdAndOrganization_Id(request.getProjectId(), orgId)
 				.orElseThrow(() -> new ResourceNotFoundException("Project not found within your organization"));
 
-		List<User> targetUsers = userRepository.findAllById(request.getUserIds());
+		
+		projectRepository.clearAllAdminsFromProject(project.getId());
 
+	
+		if (request.getUserIds() == null || request.getUserIds().isEmpty()) {
+			return;
+		}
+
+		
+		List<User> targetUsers = userRepository.findAllById(request.getUserIds());
 		if (targetUsers.isEmpty()) {
 			throw new ResourceNotFoundException("No valid users found for the provided IDs");
 		}
 
 		for (User user : targetUsers) {
-
 			if (!user.getOrganization().getId().equals(orgId)) {
 				throw new AccessDeniedException("User " + user.getName() + " does not belong to your organization");
 			}
 
-			user.setRole(Role.ADMIN);
-
-			if (!project.getMembers().contains(user)) {
-				project.getMembers().add(user);
+			if (user.getRole() != Role.ADMIN) {
+				user.setRole(Role.ADMIN);
+				userRepository.save(user); 
 			}
+
+			projectRepository.safeAddMember(project.getId(), user.getId());
 		}
-		userRepository.saveAll(targetUsers);
-		projectRepository.save(project);
 	}
-	
+
 	@Override
 	@Transactional
 	public void removeMemberFromProject(UUID userId) {
-	    // 1. Context validation
-	    User loggedAdmin = getLoggedInUser();
-	    UUID orgId = getOrgIdOrThrow(loggedAdmin);
+		User loggedAdmin = getLoggedInUser();
+		UUID orgId = getOrgIdOrThrow(loggedAdmin);
 
-	    // 2. Fetch the project safely (no collection is loaded now, avoiding the Hibernate exception)
-	    Project project = projectRepository.findProjectByAdminMember(loggedAdmin.getId(), orgId)
-	            .orElseThrow(() -> new ResourceNotFoundException("No project found assigned to this Admin"));
+		Project project = projectRepository.findProjectByAdminMember(loggedAdmin.getId(), orgId)
+				.orElseThrow(() -> new ResourceNotFoundException("No project found assigned to this Admin"));
 
-	    // 3. Remove the relationship row in the join table directly via database execution
-	    projectRepository.removeMemberLink(project.getId(), userId);
+		projectRepository.removeMemberLink(project.getId(), userId);
 
-	    // 4. Clean up any tasks assigned to this user in this project
-	    taskRepository.deleteByProjectIdAndAssignedToId(project.getId(), userId);
-	    
-	    // Crucial: DO NOT call projectRepository.save(project) here!
-	    // The Direct modifications to tables have already altered the state perfectly.
+		taskRepository.deleteByProjectIdAndAssignedToId(project.getId(), userId);
+
 	}
-	
-	
-	
+
 }

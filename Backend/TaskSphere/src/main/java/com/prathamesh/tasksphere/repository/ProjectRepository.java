@@ -42,22 +42,32 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
 	@Query(value = "DELETE FROM project_members WHERE project_id = :projectId", nativeQuery = true)
 	void deleteProjectMembers(@Param("projectId") UUID projectId);
 
-	@Query("SELECT p FROM Project p " +
-	           "JOIN p.members m " +
-	           "WHERE m.id = :adminId AND m.role = com.prathamesh.tasksphere.model.Role.ADMIN " +
-	           "AND p.organization.id = :orgId")
-	    Optional<Project> findProjectByAdminMember(@Param("adminId") UUID adminId, @Param("orgId") UUID orgId);
+	@Query("SELECT p FROM Project p " + "JOIN p.members m "
+			+ "WHERE m.id = :adminId AND m.role = com.prathamesh.tasksphere.model.Role.ADMIN "
+			+ "AND p.organization.id = :orgId")
+	Optional<Project> findProjectByAdminMember(@Param("adminId") UUID adminId, @Param("orgId") UUID orgId);
 
-	    // Safe, clean JPQL to delete the mapping row without loading collections
-	    @Modifying
-	    @Query(value = "DELETE FROM project_members WHERE project_id = :projectId AND user_id = :userId", nativeQuery = true)
-	    void removeMemberLink(@Param("projectId") UUID projectId, @Param("userId") UUID userId);
-	    
-	    @Modifying
-	    @Query(value = "INSERT IGNORE INTO project_members (project_id, user_id) VALUES (:projectId, :userId)", nativeQuery = true)
-	    void addMemberLink(@Param("projectId") UUID projectId, @Param("userId") UUID userId);
-	    
-	    
-	    @Query("SELECT p.name FROM Project p JOIN p.members m WHERE m.id = :userId")
-	    List<String> findProjectNamesByUserId(@Param("userId") UUID userId);
+	// Safe, clean JPQL to delete the mapping row without loading collections
+	@Modifying
+	@Query(value = "DELETE FROM project_members WHERE project_id = :projectId AND user_id = :userId", nativeQuery = true)
+	void removeMemberLink(@Param("projectId") UUID projectId, @Param("userId") UUID userId);
+
+	@Modifying
+	@Query(value = "INSERT IGNORE INTO project_members (project_id, user_id) VALUES (:projectId, :userId)", nativeQuery = true)
+	void addMemberLink(@Param("projectId") UUID projectId, @Param("userId") UUID userId);
+
+	@Query("SELECT p.name FROM Project p JOIN p.members m WHERE m.id = :userId")
+	List<String> findProjectNamesByUserId(@Param("userId") UUID userId);
+
+	@Modifying
+	@Query(value = "INSERT IGNORE INTO project_members (project_id, user_id) VALUES (:projectId, :userId)", nativeQuery = true)
+	void safeAddMember(@Param("projectId") UUID projectId, @Param("userId") UUID userId);
+
+	@Modifying
+	@Query(value = "DELETE FROM project_members WHERE project_id = :projectId AND user_id = :userId", nativeQuery = true)
+	void safeRemoveMember(@Param("projectId") UUID projectId, @Param("userId") UUID userId);
+
+	@Modifying
+	@Query(value = "DELETE FROM project_members WHERE project_id = :projectId AND user_id IN (SELECT u.id FROM users u WHERE u.role = 'ADMIN')", nativeQuery = true)
+	void clearAllAdminsFromProject(@Param("projectId") UUID projectId);
 }
