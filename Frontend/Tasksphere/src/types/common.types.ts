@@ -12,4 +12,5 @@ export interface UserResponse {
     email: string;
     role: string;
     organizationName?: string;
+    projectNames?: string[];
 }

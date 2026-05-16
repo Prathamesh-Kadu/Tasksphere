@@ -3,8 +3,7 @@ package com.prathamesh.tasksphere.dto;
 import java.util.List;
 import java.util.UUID;
 
-import com.prathamesh.tasksphere.model.Role;
-
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,11 +13,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UserResponse {
-	private UUID id;
-	private String name;
-	private String email;
-	private Role role;
-	private String organizationName;
-	private List<String> projectNames;
+public class AssignAdminRequest {
+	@NotNull(message = "User ID is required")
+	private List<UUID> userIds;
+
+	@NotNull(message = "Project ID is required")
+	private UUID projectId;
 }

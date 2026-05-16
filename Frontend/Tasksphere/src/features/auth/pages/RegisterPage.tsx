@@ -1,5 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { Link, useNavigate } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query";
 import AuthButton from "../components/AuthButton";
 import AuthInput from "../components/AuthInput";
 import AuthLayout from "../components/AuthLayout";
@@ -9,21 +11,36 @@ import { registerUser } from "../services/authService";
 import useCancelableRequest from "../hooks/useCancelableRequest";
 
 export default function RegisterPage() {
-    const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<RegisterRequest>({
-        resolver: zodResolver(registerSchema)
-    })
-
+    const navigate = useNavigate();
     const { createSignal } = useCancelableRequest();
 
-    const onRegisterSubmit = async (data: RegisterRequest) => {
-        try {
-            const response = await registerUser(data, createSignal());
+    const { register, handleSubmit, reset, formState: { errors } } = useForm<RegisterRequest>({
+        resolver: zodResolver(registerSchema)
+    });
+
+    // Handle account creation asynchronously via TanStack Query
+    const registerMutation = useMutation({
+        mutationFn: (data: RegisterRequest) => {
+            return registerUser(data, createSignal());
+        },
+        onSuccess: (response) => {
+            console.log("Registration successful:", response);
+
+            // 1. Wipe out form inputs
             reset();
-            console.log(response);
-        } catch (error: any) {
+
+            // 2. Safely redirect the newly registered user to the login route
+            navigate("/login");
+        },
+        onError: (error: any) => {
+            // Feel free to connect a toast notification system here later
             console.error("Register failed:", error);
         }
-    }
+    });
+
+    const onRegisterSubmit = (data: RegisterRequest) => {
+        registerMutation.mutate(data);
+    };
 
     return (
         <AuthLayout title="Register">
@@ -36,6 +53,7 @@ export default function RegisterPage() {
                     error={errors.name}
                     autocomplete="name"
                 />
+
                 <AuthInput
                     label="Email"
                     type="email"
@@ -44,6 +62,7 @@ export default function RegisterPage() {
                     error={errors.email}
                     autocomplete="email"
                 />
+
                 <AuthInput
                     label="Password"
                     type="password"
@@ -54,11 +73,22 @@ export default function RegisterPage() {
                 />
 
                 <AuthButton
-                    isLoading={isSubmitting}
+                    // Control submission loaders using the mutation status tracking
+                    isLoading={registerMutation.isPending}
                     label="Register"
                     loadingLabel="Registering"
                 />
             </form>
+
+            <div className="text-center mt-3 small text-muted">
+                Already have an account?{" "}
+                <Link
+                    to="/login"
+                    className="text-primary text-decoration-none fw-semibold"
+                >
+                    Login here
+                </Link>
+            </div>
         </AuthLayout>
     );
 }

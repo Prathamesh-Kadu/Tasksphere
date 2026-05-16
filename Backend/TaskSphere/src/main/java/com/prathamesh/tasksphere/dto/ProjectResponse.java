@@ -1,5 +1,6 @@
 package com.prathamesh.tasksphere.dto;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import lombok.AllArgsConstructor;
@@ -15,4 +16,6 @@ public class ProjectResponse {
 	private UUID id;
 	private String name;
 	private String description;
+	private String organizationName;
+	private LocalDateTime createdAt;
 }

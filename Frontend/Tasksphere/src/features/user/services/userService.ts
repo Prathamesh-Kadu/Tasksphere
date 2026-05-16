@@ -1,14 +1,4 @@
 import axiosClient from "../../../api/interceptor";
-import type { PageResponse, UserResponse } from "../../../types/common.types";
-
-// ---------------- Get Users By Role and Search ---------------
-export const getMembers = async (page: number, size: number, name?: string): Promise<PageResponse<UserResponse>> => {
-    const response = await axiosClient.get(`/user/members`, {
-        params: { page, size, name: name?.trim() || undefined }
-    });
-    return response.data;
-};
-
 
 //----------------- Remove User from Organization -----------------
 export const removeUserFromOrg = async (userId: string): Promise<void> => {
@@ -16,8 +6,21 @@ export const removeUserFromOrg = async (userId: string): Promise<void> => {
 };
 
 
+
+//----------------- Remove User from Project -----------------
+export const removeUserFromProject = async (userId: string) => {
+    const response = await axiosClient.delete(`/project/my-project/members/${userId}`);
+    return response.data;
+};
+
 //----------------- Add User to Organization -----------------
 export const addUserToOrg = async (userId: string[]): Promise<void> => {
     const response = await axiosClient.patch(`/user/members/${userId}`);
+    return response.data;
+};
+
+//----------------- Add User to Project -----------------
+export const addUserToProject = async (userIds: string[]): Promise<void> => {
+    const response = await axiosClient.post(`/project/my-project/members`, userIds);
     return response.data;
 };

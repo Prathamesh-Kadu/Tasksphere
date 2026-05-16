@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 import LoginPage from "../features/auth/pages/LoginPage";
 import RegisterPage from "../features/auth/pages/RegisterPage";
 import DashboardPage from "../features/dashboard/pages/DashboardPage";
@@ -6,19 +6,23 @@ import ProtectedRoute from "./ProtectedRoute";
 import OrganizationPage from "../features/organization/pages/OrganizationPage";
 import { OrganizationDetailPage } from "../features/organization/pages/OrganizationDetailPage";
 import { UserPage } from "../features/user/pages/UserPage";
+import { ProjectPage } from "../features/project/pages/ProjectPage";
 
 const router = createBrowserRouter([
-    // { path: "/", element:  },
+    // --- Public Root Fallback ---
+    { path: "/", element: <Navigate to="/login" replace /> },
     { path: "/login", element: <LoginPage /> },
     { path: "/register", element: <RegisterPage /> },
-    { path: "/dashboard", element: <DashboardPage /> },
 
-    // --- 3. Super Admin Only Group ---
+    // --- Unified Dashboard & Protected System Layout ---
     {
         path: "/dashboard",
         element: <DashboardPage />,
         children: [
-            { index: true, element: null },
+            // This handles loading nothing when strictly visiting exactly "/dashboard"
+            { index: true, element: null }, 
+            
+            // --- Super Admin Only Group ---
             {
                 element: <ProtectedRoute allowedRoles={['SUPER_ADMIN']} />,
                 children: [
@@ -26,43 +30,23 @@ const router = createBrowserRouter([
                     { path: "organizations/:id", element: <OrganizationDetailPage /> },
                 ]
             },
+            
+            // --- Shared Management Roles Group (Owner, Admin, Super Admin) ---
             {
                 element: <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN', 'OWNER']} />,
                 children: [
-                    { path: "users", element: <UserPage /> }, // Your new user feature page
+                    { path: "users", element: <UserPage /> },
+                    { path: "projects", element: <ProjectPage /> }, // Placed together in one block
                 ]
             },
         ]
     },
-    // --- 2. Protected Group (Everyone Logged In) ---
-    //   {
-    //     /* We DON'T give this a 'path'. 
-    //        It is just a 'Gatekeeper' for the children below.
-    //     */
-    //     element: <ProtectedRoute />, 
-    //     children: [
-    //       { path: "/dashboard", element: <DashboardPage /> },
-    //       { path: "/profile", element: <ProfilePage /> },
-    //     ]
-    //   },
 
-    //   // --- 3. Role-Specific Group (Admins/Managers Only) ---
-    //   {
-    //     /* HERE is where you put allowedRoles. 
-    //        Only children of THIS object will be checked for these roles.
-    //     */
-    //     element: <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']} />,
-    //     children: [
-    //       { path: "/inventory", element: <InventoryPage /> },
-    //     ]
-    //   },
-
-    //   // --- 4. The Fallback (The "Catch-All") ---
-    //   { 
-    //     path: "*", 
-    //     element: <Navigate to="/login" replace /> 
-    //   }
-
+    // --- Catch-All Unmatched Routes Fallback ---
+    { 
+        path: "*", 
+        element: <Navigate to="/login" replace /> 
+    }
 ]);
 
 export default router;

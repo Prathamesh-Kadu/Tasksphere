@@ -3,8 +3,8 @@ import { useEffect, useState } from "react"; // Added useState and useEffect
 import { useSearchParams } from "react-router-dom";
 import useAuth from "../../../hooks/useAuth";
 import { UserTable } from "../components/UserTable";
-import { getMembers } from "../services/userService";
 import { AddMemberModal } from "../components/AddMemberModal";
+import { getMembers } from "../../../services/commonService";
 
 export const UserPage = () => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -55,7 +55,7 @@ export const UserPage = () => {
     return (
         <div className="container-fluid">
 
-            <div className="d-flex justify-content-between align-items-center mb-4 p-2">
+            <div className="d-flex justify-content-between align-items-center mb-4 ">
                 <h4 className="mb-0">Users</h4>
                 {(role === "OWNER" || role === "ADMIN") &&
                     <button className="btn btn-primary" onClick={handleAdd}>
@@ -63,7 +63,7 @@ export const UserPage = () => {
                     </button>
                 }
             </div>
-            <div className="row mb-4">
+            <div className="row mb-3">
                 <div className="col-12 col-md-6">
                     <div className="input-group">
                         <input
@@ -110,7 +110,11 @@ export const UserPage = () => {
             {isAddModalOpen && <AddMemberModal
                 show={isAddModalOpen}
                 handleClose={handleCloseModal}
+                existingMembers={data?.content || []}
             />}
+
+
+
         </div>
     );
 };

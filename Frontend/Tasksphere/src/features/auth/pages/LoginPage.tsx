@@ -1,5 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { Link, useNavigate } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query";
 import AuthButton from "../components/AuthButton";
 import AuthInput from "../components/AuthInput";
 import AuthLayout from "../components/AuthLayout";
@@ -8,29 +10,47 @@ import type { LoginRequest } from "../types/auth.types";
 import { saveToken } from "../../../utils/tokenStorage";
 import useCancelableRequest from "../hooks/useCancelableRequest";
 import { loginSchema } from "../schema/auth.schema";
+import useAuth from "../../../hooks/useAuth";
 
 export default function LoginPage() {
-
-    const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<LoginRequest>({
-        resolver: zodResolver(loginSchema)
-    })
-
+    const navigate = useNavigate();
     const { createSignal } = useCancelableRequest();
 
-    const onLoginSubmit = async (data: LoginRequest) => {
-        try {
-            const response = await login(data, createSignal());
+    const { refreshUser } = useAuth();
+
+    const { register, handleSubmit, reset, formState: { errors } } = useForm<LoginRequest>({
+        resolver: zodResolver(loginSchema)
+    });
+
+    const loginMutation = useMutation({
+        mutationFn: (data: LoginRequest) => {
+            return login(data, createSignal());
+        },
+        onSuccess: async (response) => {
             saveToken(response.token);
-            reset();
-            console.log(response);
-        } catch (error: any) {
+
+            try {
+                await refreshUser();
+
+                reset();
+
+                navigate("/dashboard");
+            } catch (err) {
+                console.error("Failed to update context user state:", err);
+            }
+        },
+        onError: (error: any) => {
             console.error("Login failed:", error);
         }
-    }
+    });
+
+    const onLoginSubmit = (data: LoginRequest) => {
+        loginMutation.mutate(data);
+    };
+
     return (
         <AuthLayout title="Login">
             <form onSubmit={handleSubmit(onLoginSubmit)}>
-
                 <AuthInput
                     label="Email"
                     type="email"
@@ -50,11 +70,21 @@ export default function LoginPage() {
                 />
 
                 <AuthButton
-                    isLoading={isSubmitting}
+                    isLoading={loginMutation.isPending}
                     label="Login"
                     loadingLabel="Logging in"
                 />
             </form>
+
+            <div className="text-center mt-3 small text-muted">
+                New user?{" "}
+                <Link
+                    to="/register"
+                    className="text-primary text-decoration-none fw-semibold"
+                >
+                    Register here
+                </Link>
+            </div>
         </AuthLayout>
     );
 }
