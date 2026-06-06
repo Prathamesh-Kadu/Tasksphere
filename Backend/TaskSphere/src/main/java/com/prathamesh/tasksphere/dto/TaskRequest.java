@@ -21,7 +21,6 @@ public class TaskRequest {
 	@NotBlank(message = "Title is required and cannot be empty")
 	private String title;
 	
-	@NotBlank(message = "Description is required and cannot be empty")
 	private String description;
 	
 	@FutureOrPresent(message = "Date must be today or in the future")

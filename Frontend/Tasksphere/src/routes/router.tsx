@@ -7,22 +7,21 @@ import OrganizationPage from "../features/organization/pages/OrganizationPage";
 import { OrganizationDetailPage } from "../features/organization/pages/OrganizationDetailPage";
 import { UserPage } from "../features/user/pages/UserPage";
 import { ProjectPage } from "../features/project/pages/ProjectPage";
+import { TaskPage } from "../features/task/pages/TaskPage";
+import { ManageTaskPage } from "../features/task/pages/ManageTaskPage";
+import { NotFoundPage } from "../pages/NotFoundPage";
 
 const router = createBrowserRouter([
-    // --- Public Root Fallback ---
     { path: "/", element: <Navigate to="/login" replace /> },
     { path: "/login", element: <LoginPage /> },
     { path: "/register", element: <RegisterPage /> },
 
-    // --- Unified Dashboard & Protected System Layout ---
     {
         path: "/dashboard",
         element: <DashboardPage />,
         children: [
-            // This handles loading nothing when strictly visiting exactly "/dashboard"
-            { index: true, element: null }, 
-            
-            // --- Super Admin Only Group ---
+            { index: true, element: null },
+
             {
                 element: <ProtectedRoute allowedRoles={['SUPER_ADMIN']} />,
                 children: [
@@ -30,22 +29,32 @@ const router = createBrowserRouter([
                     { path: "organizations/:id", element: <OrganizationDetailPage /> },
                 ]
             },
-            
-            // --- Shared Management Roles Group (Owner, Admin, Super Admin) ---
+
             {
                 element: <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN', 'OWNER']} />,
                 children: [
                     { path: "users", element: <UserPage /> },
-                    { path: "projects", element: <ProjectPage /> }, // Placed together in one block
+                    { path: "projects", element: <ProjectPage /> },
+                ]
+            },
+            {
+                element: <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN', 'OWNER', 'MEMBER']} />,
+                children: [
+                    { path: "tasks", element: <TaskPage /> },
+                ]
+            },
+            {
+                element: <ProtectedRoute allowedRoles={['ADMIN']} />,
+                children: [
+                    { path: "tasks/manage", element: <ManageTaskPage /> },
+                    { path: "tasks/manage/:id", element: <ManageTaskPage /> },
                 ]
             },
         ]
     },
-
-    // --- Catch-All Unmatched Routes Fallback ---
-    { 
-        path: "*", 
-        element: <Navigate to="/login" replace /> 
+    {
+        path: "*",
+        element: <NotFoundPage />
     }
 ]);
 

@@ -14,6 +14,8 @@ const TopBar = () => {
   return (
     <nav className="navbar navbar-expand bg-white border-bottom px-2 py-2 sticky-top shadow-sm">
       <div className="container-fluid d-flex justify-content-between align-items-center">
+        
+        {/* Mobile Sidebar Hamburger Toggle */}
         <button
           className="btn d-lg-none me-3 border-0 p-0 hamburger-btn"
           type="button"
@@ -23,10 +25,51 @@ const TopBar = () => {
         >
           <AiOutlineMenu size={24} />
         </button>
+        
         <span className="navbar-brand d-lg-none fw-bold" style={{ color: "#002141" }}>
           TaskSphere
         </span>
 
+        {/* 🔑 DYNAMIC WORKSPACE HEADERS BASED ON ACTIVE USER SCOPE */}
+        <div className="d-none d-md-flex align-items-center text-secondary ms-2" style={{ fontSize: '13px' }}>
+          
+          {/* 1. OWNER Layout View: Displays only Organization Name */}
+          {role === "OWNER" && user?.organizationName && (
+            <div className="d-flex align-items-center gap-1">
+              <span className="text-muted fw-normal">Organization:</span>
+              <span className="fw-bold text-dark">{user.organizationName}</span>
+            </div>
+          )}
+
+          {/* 2. ADMIN & MEMBER Layout View: Displays both Organization & Assigned Projects */}
+          {(role === "ADMIN" || role === "MEMBER") && (
+            <div className="d-flex align-items-center gap-2 flex-wrap">
+              {user?.organizationName && (
+                <>
+                  <span className="text-muted fw-normal">Org:</span>
+                  <span className="fw-bold text-dark me-1">{user.organizationName}</span>
+                </>
+              )}
+              
+              {user?.organizationName && user?.projectNames && user.projectNames.length > 0 && (
+                <span className="text-muted opacity-50 px-1">|</span>
+              )}
+
+              {user?.projectNames && user.projectNames.length > 0 && (
+                <>
+                  <span className="text-muted fw-normal">Projects:</span>
+                  <span className="fw-bold text-primary" title={user.projectNames.join(", ")}>
+                    {user.projectNames.join(", ")}
+                  </span>
+                </>
+              )}
+            </div>
+          )}
+          
+          {/* 3. SUPER_ADMIN Layout Context: Evaluates to null/blank space automatically */}
+        </div>
+
+        {/* Right Aligned Profile Avatar & Actions Dropdown menu context */}
         <div className="dropdown ms-auto py-2">
           <div
             className="d-flex align-items-center dropdown-toggle border-0"
@@ -53,7 +96,6 @@ const TopBar = () => {
 
           {/* Dropdown Menu */}
           <ul className="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
-            {/* Mobile-only header inside dropdown */}
             <li className="px-3 py-2 d-md-none border-bottom mb-1">
               <div className="fw-bold small">{user?.name}</div>
               <div className="text-muted" style={{ fontSize: '10px' }}>{role}</div>

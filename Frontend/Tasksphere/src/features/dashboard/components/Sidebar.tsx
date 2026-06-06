@@ -2,12 +2,23 @@ import { Link, useLocation } from "react-router-dom";
 import useAuth from "../../../hooks/useAuth";
 import { roleMenu } from "../config/roleMenu";
 
-export default function Sidebar() {
+interface SidebarProps {
+  hideNavLinks?: boolean;
+}
+
+export default function Sidebar({ hideNavLinks = false }: SidebarProps) {
     const location = useLocation();
     const { user } = useAuth();
 
     const currentRole = user?.role || "MEMBER";
-    const menuItems = roleMenu[currentRole] || roleMenu["MEMBER"];
+    
+    // 🔑 1. Get the base menu items array for the current role
+    let menuItems = roleMenu[currentRole] || roleMenu["MEMBER"];
+
+    // 🔑 2. If nav links are hidden, filter the array down strictly to the core Dashboard tab
+    if (hideNavLinks) {
+        menuItems = menuItems.filter(item => item.path === "/dashboard");
+    }
 
     const isActive = (path: string) => {
         const currentPath = location.pathname;

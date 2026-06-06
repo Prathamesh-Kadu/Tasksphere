@@ -48,11 +48,36 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public UserResponse getProfile() {
-		User existingUser = getLoggedInUser();
+	    User detachedUser = getLoggedInUser();
+	    
+	    User existingUser = userRepository.findById(detachedUser.getId())
+	            .orElseThrow(() -> new ResourceNotFoundException("User profile session lost"));
 
-		return UserResponse.builder().id(existingUser.getId()).name(existingUser.getName())
-				.email(existingUser.getEmail()).role(existingUser.getRole()).build();
+	    UserResponse.UserResponseBuilder builder = UserResponse.builder()
+	            .id(existingUser.getId())
+	            .name(existingUser.getName())
+	            .email(existingUser.getEmail())
+	            .role(existingUser.getRole());
+
+	    if (existingUser.getRole() == Role.OWNER) {
+	        if (existingUser.getOrganization() != null) {
+	            builder.organizationName(existingUser.getOrganization().getName());
+	        }
+	    } 
+	    else if (existingUser.getRole() == Role.ADMIN || existingUser.getRole() == Role.MEMBER) {
+	        
+	        // 🔑 Clean database fetch: Bypasses lazy loading proxies and stream modification errors!
+	        List<String> projectNames = projectRepository.findProjectNamesByUserId(existingUser.getId());
+	        builder.projectNames(projectNames);
+	        
+	        if (existingUser.getOrganization() != null) {
+	            builder.organizationName(existingUser.getOrganization().getName());
+	        }
+	    }
+
+	    return builder.build();
 	}
 
 	@Override
@@ -97,12 +122,10 @@ public class UserServiceImpl implements UserService {
 	       
 	        List<String> projects = null;
 	        
-	        // Safe Check: Check if current viewer is OWNER or SUPER_ADMIN
 	        if (logged.getRole() == Role.OWNER || logged.getRole() == Role.SUPER_ADMIN) {
-	            // Fetch project names directly from database using the new isolated query
 	            projects = projectRepository.findProjectNamesByUserId(user.getId());
-	            
-	            // If the user doesn't belong to any project, default to an empty list instead of null
+
+
 	            if (projects == null) {
 	                projects = List.of();
 	            }

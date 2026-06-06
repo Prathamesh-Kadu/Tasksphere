@@ -4,12 +4,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.prathamesh.tasksphere.model.Task;
+import com.prathamesh.tasksphere.model.TaskStatus;
 
 public interface TaskRepository extends JpaRepository<Task, UUID>{
 	List<Task> findByProject_Id(UUID projectId);
@@ -24,4 +27,26 @@ public interface TaskRepository extends JpaRepository<Task, UUID>{
         @Param("projectId") UUID projectId, 
         @Param("userId") UUID userId
     );
+    
+    @Query("SELECT t FROM Task t WHERE LOWER(t.title) LIKE LOWER(CONCAT('%', :search, '%'))")
+    Page<Task> findAllGlobal(@Param("search") String search, Pageable pageable);
+
+    @Query("SELECT t FROM Task t JOIN t.project p WHERE p.organization.id = :orgId " +
+           "AND LOWER(t.title) LIKE LOWER(CONCAT('%', :search, '%'))")
+    Page<Task> findByOrganizationId(@Param("orgId") UUID orgId, @Param("search") String search, Pageable pageable);
+
+    @Query("SELECT t FROM Task t JOIN t.project p JOIN p.members m WHERE m.id = :adminId " +
+           "AND LOWER(t.title) LIKE LOWER(CONCAT('%', :search, '%'))")
+    Page<Task> findByAdminProjectScope(@Param("adminId") UUID adminId, @Param("search") String search, Pageable pageable);
+
+    @Query("SELECT t FROM Task t WHERE t.assignedTo.id = :memberId " +
+           "AND LOWER(t.title) LIKE LOWER(CONCAT('%', :search, '%'))")
+    Page<Task> findByAssignedUserId(@Param("memberId") UUID memberId, @Param("search") String search, Pageable pageable);
+    
+    @Query("SELECT COUNT(t) > 0 FROM Task t JOIN t.project.members m WHERE t.id = :taskId AND m.id = :userId")
+    boolean existsByIdAndProjectMembersId(@Param("taskId") UUID taskId, @Param("userId") UUID userId);
+    
+    @Modifying
+    @Query("UPDATE Task t SET t.status = :status WHERE t.id = :taskId")
+    int updateTaskStatusDirectly(@Param("taskId") UUID taskId, @Param("status") TaskStatus status);
 }
