@@ -1,6 +1,7 @@
 import { createContext, useCallback, useEffect, useState } from "react";
 import { getToken, removeToken, isTokenExpired } from "../utils/tokenStorage";
 import axiosClient from "../api/interceptor";
+import type { UserResponse } from "../types/common.types";
 
 interface AuthContextType {
   user: any;
@@ -13,7 +14,7 @@ interface AuthContextType {
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<UserResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
   const fetchUserInfo = useCallback(async () => {
