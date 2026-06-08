@@ -5,27 +5,23 @@ import { BiArrowBack } from "react-icons/bi";
 export const NotFoundPage = () => {
     const navigate = useNavigate();
     const [countdown, setCountdown] = useState(10);
-
-    // Smart fallback: Send to dashboard if logged in, otherwise to login
     const token = localStorage.getItem("token"); 
     const fallbackRoute = token ? "/dashboard" : "/login";
 
     const handleGoBack = () => {
-        // 🔑 Checks if there is a history stack to pop back into
         if (window.history.length > 2) {
-            navigate(-1); // Takes them exactly one step back to their last valid page
+            navigate(-1);
         } else {
             navigate(fallbackRoute, { replace: true });
         }
     };
 
-    // Auto-redirect handling
     useEffect(() => {
         const timer = setInterval(() => {
             setCountdown((prev) => {
                 if (prev <= 1) {
                     clearInterval(timer);
-                    handleGoBack(); // 🔑 Triggers the smart back navigation automatically
+                    handleGoBack();
                     return 0;
                 }
                 return prev - 1;

@@ -8,6 +8,7 @@ import type { Project, ProjectReponse } from "../types/project.types";
 import { FaUserShield } from "react-icons/fa";
 import { AssignAdminModal } from "./AssignAdminModal";
 import { Badge } from "react-bootstrap";
+import { toastError, toastSuccess } from "../../../components/toast/toast";
 
 interface ProjectTableProps {
     projects: ProjectReponse[];
@@ -17,8 +18,6 @@ interface ProjectTableProps {
 
 export const ProjectTable = ({ projects, loggedUserRole, onEdit }: ProjectTableProps) => {
     const queryClient = useQueryClient();
-
-    // Changed typing to accept ProjectReponse so admin names aren't lost
     const [selectedProject, setSelectedProject] = useState<ProjectReponse | null>(null);
     const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -27,7 +26,11 @@ export const ProjectTable = ({ projects, loggedUserRole, onEdit }: ProjectTableP
         mutationFn: (id: string) => deleteProject(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['projects'], exact: false });
+            toastSuccess("Project deleted successfully");
         },
+        onError: () => {
+            toastError("Failed to delete project.");
+        }
     });
 
     const formatDate = (dateString: string) => {
@@ -67,7 +70,7 @@ export const ProjectTable = ({ projects, loggedUserRole, onEdit }: ProjectTableP
                                 <tr>
                                     <th>Name</th>
                                     <th>Description</th>
-                                    <th>Assigned Admins</th> {/* New visual feedback column */}
+                                    <th>Assigned Admins</th>
                                     {loggedUserRole === "SUPER_ADMIN" && <th>Organization</th>}
                                     <th>Created On</th>
                                     {loggedUserRole === "OWNER" && <th>Actions</th>}
@@ -108,7 +111,7 @@ export const ProjectTable = ({ projects, loggedUserRole, onEdit }: ProjectTableP
                                                     style={{ cursor: "pointer", color: "#002141" }}
                                                     title="Manage Admins"
                                                     onClick={() => {
-                                                        setSelectedProject(p); // Keeps the whole item state loaded
+                                                        setSelectedProject(p);
                                                         setIsModalOpen(true);
                                                     }}
                                                 />
@@ -122,7 +125,7 @@ export const ProjectTable = ({ projects, loggedUserRole, onEdit }: ProjectTableP
                 </div>
             </div>
 
-            {/* --- Open Modal with Current Admin States Context Injection --- */}
+            {/* --- Admin Assign Modal */}
             {isModalOpen && selectedProject && (
                 <AssignAdminModal
                     show={isModalOpen}
@@ -132,6 +135,7 @@ export const ProjectTable = ({ projects, loggedUserRole, onEdit }: ProjectTableP
                 />
             )}
 
+            {/* Delete Project Modal */}
             {deleteTargetId && (
                 <AppModal
                     show={!!deleteTargetId}

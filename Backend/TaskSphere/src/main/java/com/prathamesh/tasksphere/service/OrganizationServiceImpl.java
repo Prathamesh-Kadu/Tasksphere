@@ -20,6 +20,8 @@ import com.prathamesh.tasksphere.model.Organization;
 import com.prathamesh.tasksphere.model.Role;
 import com.prathamesh.tasksphere.model.User;
 import com.prathamesh.tasksphere.repository.OrganizationRepository;
+import com.prathamesh.tasksphere.repository.ProjectRepository;
+import com.prathamesh.tasksphere.repository.TaskRepository;
 import com.prathamesh.tasksphere.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -30,6 +32,8 @@ import lombok.RequiredArgsConstructor;
 public class OrganizationServiceImpl implements OrganizationService {
 	private final OrganizationRepository organizationRepository;
 	private final UserRepository userRepository;
+	private final TaskRepository taskRepository;
+	private final ProjectRepository projectRepository;
 
 	@Override
 	@Transactional
@@ -88,17 +92,19 @@ public class OrganizationServiceImpl implements OrganizationService {
 	@Override
 	@Transactional
 	public void deleteOrganization(UUID organizationId) {
-		Organization existingOrganization = organizationRepository.findById(organizationId)
-				.orElseThrow(() -> new ResourceNotFoundException("Organization not found with ID: " + organizationId));
+	    Organization organization = organizationRepository.findById(organizationId)
+	            .orElseThrow(() -> new ResourceNotFoundException("Organization not found with ID: " + organizationId));
 
-		for (User user : existingOrganization.getUsers()) {
-			user.setOrganization(null);
-		}
-		existingOrganization.getUsers().clear();
+	    taskRepository.deleteByOrganizationId(organizationId);
 
-		organizationRepository.delete(existingOrganization);
+	    projectRepository.deleteProjectMembersByOrganizationId(organizationId);
+
+	    projectRepository.deleteByOrganizationId(organizationId);
+	    userRepository.demoteAndDetachUsersByOrganizationId(organizationId);
+
+	    organization.getUsers().clear();
+	    organizationRepository.delete(organization);
 	}
-
 	@Override
 	@Transactional
 	public void assignOwner(AssignOwnerRequest request) {

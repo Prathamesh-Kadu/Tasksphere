@@ -6,6 +6,7 @@ import ButtonLoader from "../../../components/loader/ButtonLoader";
 import { AppModal } from "../../../components/modals/AppModal";
 import { removeUserFromOrg, removeUserFromProject } from "../services/userService";
 import type { UserResponse } from "../../../types/common.types";
+import { toastError, toastSuccess } from "../../../components/toast/toast";
 
 interface UserTableProps {
     users: UserResponse[];
@@ -16,12 +17,12 @@ export const UserTable = ({ users, loggedUserRole }: UserTableProps) => {
     const queryClient = useQueryClient();
     const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
-    // Dynamic checks to keep JSX cleaner
     const isOwner = loggedUserRole === "OWNER";
     const isAdmin = loggedUserRole === "ADMIN";
     const isSuperAdmin = loggedUserRole === "SUPER_ADMIN";
     const canModify = isOwner || isAdmin;
 
+    // --------- Delete Member -------------------
     const deleteMutation = useMutation({
         mutationFn: (userId: string) => {
             return isOwner ? removeUserFromOrg(userId) : removeUserFromProject(userId);
@@ -29,9 +30,11 @@ export const UserTable = ({ users, loggedUserRole }: UserTableProps) => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["users"] });
             setDeleteTargetId(null);
+            toastSuccess(isOwner ? "Member removed from organization" : "Member removed from project");
         },
         onError: (error) => {
             console.error(`Failed to remove member from ${isOwner ? 'organization' : 'project'}`, error);
+            toastError(isOwner ? "Failed to remove member from organization" : "Failed to remove member from project");
         },
     });
 
@@ -50,63 +53,73 @@ export const UserTable = ({ users, loggedUserRole }: UserTableProps) => {
                                     <th>Role</th>
                                     {isSuperAdmin && <th>Organization</th>}
                                     {loggedUserRole !== "ADMIN" && <th>Projects</th>}
-                                    {canModify && <th>Actions</th>}
+                                    {(canModify || isOwner) && <th>Actions</th>}
                                 </tr>
                             </thead>
 
                             <tbody>
-                                {users.map((user) => {
-                                    const isRowUserAdmin = user.role === "ADMIN";
+                                {users
+                                    .filter((user) => {
+                                        if (loggedUserRole === "ADMIN" && user.role === "ADMIN") {
+                                            return false;
+                                        }
+                                        return true;
+                                    })
+                                    .map((user) => {
+                                        const isRowUserAdmin = user.role === "ADMIN";
+                                        const showDeleteAction = isOwner || isAdmin;
+                                        const isActionDisabled = isRowUserAdmin && isAdmin;
 
-                                    return (
-                                        <tr key={user.id}>
-                                            <td>{user.name}</td>
-                                            <td>{user.email}</td>
-                                            <td>
-                                                <Badge bg="primary">{user.role}</Badge>
-                                            </td>
-                                            {isSuperAdmin && (
-                                                <td>{user.organizationName || "N/A"}</td>
-                                            )}
-                                            {loggedUserRole !== "ADMIN" && (
+                                        return (
+                                            <tr key={user.id}>
+                                                <td>{user.name}</td>
+                                                <td>{user.email}</td>
                                                 <td>
-                                                    {user.projectNames && user.projectNames.length > 0
-                                                        ? user.projectNames.join(", ")
-                                                        : "N/A"}
+                                                    <Badge bg="primary">{user.role}</Badge>
                                                 </td>
-                                            )}
-                                            {canModify && (
-                                                <td>
-                                                    <MdDelete
-                                                        onClick={() => {
-                                                            if (!isRowUserAdmin) {
-                                                                setDeleteTargetId(user.id);
+                                                {isSuperAdmin && (
+                                                    <td>{user.organizationName || "N/A"}</td>
+                                                )}
+                                                {loggedUserRole !== "ADMIN" && (
+                                                    <td>
+                                                        {user.projectNames && user.projectNames.length > 0
+                                                            ? user.projectNames.join(", ")
+                                                            : "N/A"}
+                                                    </td>
+                                                )}
+
+                                                {showDeleteAction && (
+                                                    <td>
+                                                        <MdDelete
+                                                            onClick={() => {
+                                                                if (!isActionDisabled) {
+                                                                    setDeleteTargetId(user.id);
+                                                                }
+                                                            }}
+                                                            size={24}
+                                                            style={{
+                                                                cursor: isActionDisabled ? "not-allowed" : "pointer",
+                                                                opacity: isActionDisabled ? 0.4 : 1
+                                                            }}
+                                                            className={isActionDisabled ? "text-secondary" : "text-danger"}
+                                                            title={
+                                                                isActionDisabled
+                                                                    ? "Administrators cannot remove other administrators"
+                                                                    : (isOwner ? "Remove from Organization" : "Remove from Project")
                                                             }
-                                                        }}
-                                                        size={24}
-                                                        style={{
-                                                            cursor: isRowUserAdmin ? "not-allowed" : "pointer",
-                                                            opacity: isRowUserAdmin ? 0.4 : 1
-                                                        }}
-                                                        className={isRowUserAdmin ? "text-secondary" : "text-danger"}
-                                                        title={
-                                                            isRowUserAdmin
-                                                                ? "Administrators cannot be removed"
-                                                                : (isOwner ? "Remove from Organization" : "Remove from Project")
-                                                        }
-                                                    />
-                                                </td>
-                                            )}
-                                        </tr>
-                                    );
-                                })}
+                                                        />
+                                                    </td>
+                                                )}
+                                            </tr>
+                                        );
+                                    })}
                             </tbody>
                         </table>
                     )}
                 </div>
             </div>
 
-            {/* Dynamic Confirmation Modal */}
+            {/* Deletion Modal */}
             {deleteTargetId && (
                 <AppModal
                     show={!!deleteTargetId}

@@ -6,6 +6,7 @@ import { AppModal } from "../../../components/modals/AppModal";
 import { organizationSchema } from "../schemas/organization.schema";
 import { createOrganization, updateOrganization } from "../services/organizationService";
 import type { OrganizationRequest } from "../types/organization.types";
+import { toastError, toastSuccess } from "../../../components/toast/toast";
 
 
 interface OrganizationModalProps {
@@ -27,10 +28,24 @@ export const OrganizationModal = ({ show, handleClose, initialData }: Organizati
     const mutation = useMutation({
         mutationFn: (formData: OrganizationRequest) => initialData ? updateOrganization(initialData.id, formData) : createOrganization(formData),
         onSuccess: (updatedData) => {
+            if (initialData) {
+                toastSuccess("Organization updated successfully");
+            } else {
+                toastSuccess("Organization created successfullly");
+            }
+
             queryClient.invalidateQueries({ queryKey: ['organizations'] });
             queryClient.invalidateQueries({ queryKey: ['organization', updatedData.id] });
             handleClose();
             reset();
+        },
+        onError: () => {
+            if (initialData) {
+                toastError("Failed to update organization");
+            } else {
+                toastError("Failed to create organization");
+            }
+
         }
     })
 
@@ -40,7 +55,7 @@ export const OrganizationModal = ({ show, handleClose, initialData }: Organizati
             handleClose={handleClose}
             title={initialData ? "Edit Organization" : "Create Organization"}
         >
-                <form onSubmit={handleSubmit((data) => mutation.mutate(data))}>
+            <form onSubmit={handleSubmit((data) => mutation.mutate(data))}>
                 <div className="mb-3">
                     <label className="form-label">Organization Name</label>
                     <input

@@ -68,7 +68,6 @@ public class UserServiceImpl implements UserService {
 	    } 
 	    else if (existingUser.getRole() == Role.ADMIN || existingUser.getRole() == Role.MEMBER) {
 	        
-	        // 🔑 Clean database fetch: Bypasses lazy loading proxies and stream modification errors!
 	        List<String> projectNames = projectRepository.findProjectNamesByUserId(existingUser.getId());
 	        builder.projectNames(projectNames);
 	        
@@ -137,7 +136,7 @@ public class UserServiceImpl implements UserService {
 	                .email(user.getEmail())
 	                .role(user.getRole())
 	                .organizationName(orgName)
-	                .projectNames(projects) // Safely populated without proxy crashes
+	                .projectNames(projects)
 	                .build();
 	    });
 	}

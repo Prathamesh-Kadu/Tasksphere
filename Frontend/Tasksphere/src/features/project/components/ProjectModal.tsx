@@ -6,6 +6,7 @@ import { AppModal } from "../../../components/modals/AppModal";
 import { projectSchema } from "../schemas/project.schema";
 import { createProject, updateProject } from "../services/projectService";
 import type { ProjectRequest } from "../types/project.types";
+import { toastError, toastSuccess } from "../../../components/toast/toast";
 
 
 interface ProjectModalProps {
@@ -27,10 +28,22 @@ export const ProjectModal = ({ show, handleClose, initialData }: ProjectModalPro
     const mutation = useMutation({
         mutationFn: (formData: ProjectRequest) => initialData ? updateProject(initialData.id, formData) : createProject(formData),
         onSuccess: (updatedData) => {
+            if (initialData) {
+                toastSuccess("Project updated successfully");
+            } else {
+                toastSuccess("Project created successfullly");
+            }
             queryClient.invalidateQueries({ queryKey: ['projects'], exact: false });
             queryClient.invalidateQueries({ queryKey: ['projects', updatedData.id] });
             handleClose();
             reset();
+        },
+        onError:()=>{
+             if (initialData) {
+                 toastError("Failed to update project");
+            } else {
+                 toastError("Failed to update project");
+            }
         }
     })
 

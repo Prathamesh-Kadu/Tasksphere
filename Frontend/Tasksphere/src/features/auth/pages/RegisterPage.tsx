@@ -9,6 +9,8 @@ import { registerSchema } from "../schema/auth.schema";
 import type { RegisterRequest } from "../types/auth.types";
 import { registerUser } from "../services/authService";
 import useCancelableRequest from "../hooks/useCancelableRequest";
+import { BiArrowBack } from "react-icons/bi";
+import { toastError, toastSuccess } from "../../../components/toast/toast";
 
 export default function RegisterPage() {
     const navigate = useNavigate();
@@ -18,23 +20,19 @@ export default function RegisterPage() {
         resolver: zodResolver(registerSchema)
     });
 
-    // Handle account creation asynchronously via TanStack Query
     const registerMutation = useMutation({
         mutationFn: (data: RegisterRequest) => {
             return registerUser(data, createSignal());
         },
-        onSuccess: (response) => {
-            console.log("Registration successful:", response);
-
-            // 1. Wipe out form inputs
+        onSuccess: () => {
             reset();
-
-            // 2. Safely redirect the newly registered user to the login route
             navigate("/login");
+            toastSuccess("Registration successfully");
+
         },
         onError: (error: any) => {
-            // Feel free to connect a toast notification system here later
             console.error("Register failed:", error);
+            toastError("Registration Failed");
         }
     });
 
@@ -43,6 +41,7 @@ export default function RegisterPage() {
     };
 
     return (
+        // Form
         <AuthLayout title="Register">
             <form onSubmit={handleSubmit(onRegisterSubmit)}>
                 <AuthInput
@@ -73,13 +72,12 @@ export default function RegisterPage() {
                 />
 
                 <AuthButton
-                    // Control submission loaders using the mutation status tracking
                     isLoading={registerMutation.isPending}
                     label="Register"
                     loadingLabel="Registering"
                 />
             </form>
-
+            {/* Login Link */}
             <div className="text-center mt-3 small text-muted">
                 Already have an account?{" "}
                 <Link
@@ -87,6 +85,15 @@ export default function RegisterPage() {
                     className="text-primary text-decoration-none fw-semibold"
                 >
                     Login here
+                </Link>
+            </div>
+            {/* Back to home button */}
+            <div className="text-center mt-2 pt-2 border-top border-light">
+                <Link
+                    to="/"
+                    className="text-muted text-decoration-none small d-inline-flex align-items-center gap-1 hover-effect"
+                >
+                    <BiArrowBack size={14} /> Back to Home
                 </Link>
             </div>
         </AuthLayout>

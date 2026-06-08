@@ -2,7 +2,7 @@ import axiosClient from "../../../api/interceptor";
 import type { PageResponse } from "../../../types/common.types";
 import type { ProjectReponse, ProjectRequest } from "../types/project.types";
 
-//------- Get All Projects as per Role
+//------- Get All Projects as per Role -------------
 export const getProjects = async (page: number, size: number, search?: string): Promise<PageResponse<ProjectReponse>> => {
     const response = await axiosClient.get(`/project`, {
         params: { page, size, search: search?.trim() || undefined }

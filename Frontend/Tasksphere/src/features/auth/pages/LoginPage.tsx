@@ -11,11 +11,12 @@ import { saveToken } from "../../../utils/tokenStorage";
 import useCancelableRequest from "../hooks/useCancelableRequest";
 import { loginSchema } from "../schema/auth.schema";
 import useAuth from "../../../hooks/useAuth";
+import { BiArrowBack } from "react-icons/bi";
+import { toastError, toastSuccess } from "../../../components/toast/toast";
 
 export default function LoginPage() {
     const navigate = useNavigate();
     const { createSignal } = useCancelableRequest();
-
     const { refreshUser } = useAuth();
 
     const { register, handleSubmit, reset, formState: { errors } } = useForm<LoginRequest>({
@@ -28,19 +29,17 @@ export default function LoginPage() {
         },
         onSuccess: async (response) => {
             saveToken(response.token);
-
             try {
                 await refreshUser();
-
+                toastSuccess("Login Success");
                 reset();
-
                 navigate("/dashboard");
             } catch (err) {
                 console.error("Failed to update context user state:", err);
             }
         },
-        onError: (error: any) => {
-            console.error("Login failed:", error);
+        onError: () => {
+            toastError("Login failed");
         }
     });
 
@@ -49,6 +48,7 @@ export default function LoginPage() {
     };
 
     return (
+        // Form
         <AuthLayout title="Login">
             <form onSubmit={handleSubmit(onLoginSubmit)}>
                 <AuthInput
@@ -75,7 +75,7 @@ export default function LoginPage() {
                     loadingLabel="Logging in"
                 />
             </form>
-
+            {/* Register Link */}
             <div className="text-center mt-3 small text-muted">
                 New user?{" "}
                 <Link
@@ -83,6 +83,15 @@ export default function LoginPage() {
                     className="text-primary text-decoration-none fw-semibold"
                 >
                     Register here
+                </Link>
+            </div>
+            {/* Back to home button */}
+            <div className="text-center mt-2 pt-2 border-top border-light">
+                <Link
+                    to="/"
+                    className="text-muted text-decoration-none small d-inline-flex align-items-center gap-1 hover-effect"
+                >
+                    <BiArrowBack size={14} /> Back to Home
                 </Link>
             </div>
         </AuthLayout>

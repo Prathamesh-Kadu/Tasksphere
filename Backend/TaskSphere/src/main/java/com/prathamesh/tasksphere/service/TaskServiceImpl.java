@@ -178,53 +178,43 @@ public class TaskServiceImpl implements TaskService {
 	@Override
 	@Transactional
 	public TaskResponse updateTask(UUID id, TaskRequest request) {
-	    // 1. Fetch current logged-in admin and find their organization identity context
 	    User actor = getLoggedUser();
 	    UUID orgId = getOrgIdOrThrow(actor);
 
-	    // 2. Locate existing task
 	    Task task = taskRepository.findById(id)
 	            .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
 
-	    // 3. Multi-tenant guard: Secure cross-tenant task modifications
 	    if (!task.getProject().getOrganization().getId().equals(orgId)) {
 	        throw new AccessDeniedException("You are not authorized to update tasks outside your organization");
 	    }
 
-	    // 4. Update basic primitive metadata fields
 	    task.setTitle(request.getTitle());
 	    task.setDescription(request.getDescription());
 	    task.setStatus(request.getStatus());
 	    task.setDueDate(request.getDueDate());
 
-	    // 5. Update Project Linkage (Crucial check missing in your original draft)
 	    if (request.getProjectId() != null) {
 	        Project project = projectRepository.findById(request.getProjectId())
 	                .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
 
-	        // Guard project organization boundary consistency
 	        if (!project.getOrganization().getId().equals(orgId)) {
 	            throw new AccessDeniedException("Target project does not belong to your organization");
 	        }
 	        task.setProject(project);
 	    }
 
-	    // 6. Update Assigned Member Linkage
 	    if (request.getAssignedTo() != null) {
 	        User assignedToUser = userRepository.findById(request.getAssignedTo())
 	                .orElseThrow(() -> new ResourceNotFoundException("Assigned user not found"));
 
-	        // Guard member organization boundary consistency
 	        if (assignedToUser.getOrganization() == null || !assignedToUser.getOrganization().getId().equals(orgId)) {
 	            throw new AccessDeniedException("Assigned user does not belong to your organization");
 	        }
 	        task.setAssignedTo(assignedToUser);
 	    }
 
-	    // 7. Flush mutations into database persistence layer
 	    Task saved = taskRepository.save(task);
 
-	    // 8. Return complete mapped DTO model matching your createTask structure exactly!
 	    return TaskResponse.builder()
 	            .id(saved.getId())
 	            .title(saved.getTitle())
@@ -274,11 +264,9 @@ public class TaskServiceImpl implements TaskService {
 	    User actor = getLoggedUser();
 	    UUID orgId = getOrgIdOrThrow(actor);
 
-	    // 1. Fetch target record for validation checks
 	    Task task = taskRepository.findById(taskId)
 	            .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
 
-	    // 2. Strict Tenant Separation Guard
 	    UUID taskOrgId = (task.getProject() != null && task.getProject().getOrganization() != null) 
 	            ? task.getProject().getOrganization().getId() 
 	            : null;
@@ -286,8 +274,6 @@ public class TaskServiceImpl implements TaskService {
 	    if (orgId == null || !orgId.equals(taskOrgId)) {
 	        throw new AccessDeniedException("Access denied: Task does not belong to your organization");
 	    }
-
-	    // 3. Granular Security Scope Boundaries for Regular Members
 	    if (actor.getRole() == Role.MEMBER) {
 	        boolean isWithinScope = taskRepository.existsByIdAndProjectMembersId(taskId, actor.getId()); 
 	        if (!isWithinScope) {
@@ -295,7 +281,6 @@ public class TaskServiceImpl implements TaskService {
 	        }
 	    }
 
-	    // 4. 🔑 Perform the ultra-targeted status change bypassing full lifecycle validation
 	    taskRepository.updateTaskStatusDirectly(taskId, newStatus);
 	}
 }

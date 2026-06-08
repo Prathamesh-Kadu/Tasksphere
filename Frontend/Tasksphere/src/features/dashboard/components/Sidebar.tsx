@@ -3,7 +3,7 @@ import useAuth from "../../../hooks/useAuth";
 import { roleMenu } from "../config/roleMenu";
 
 interface SidebarProps {
-  hideNavLinks?: boolean;
+    hideNavLinks?: boolean;
 }
 
 export default function Sidebar({ hideNavLinks = false }: SidebarProps) {
@@ -11,11 +11,8 @@ export default function Sidebar({ hideNavLinks = false }: SidebarProps) {
     const { user } = useAuth();
 
     const currentRole = user?.role || "MEMBER";
-    
-    // 🔑 1. Get the base menu items array for the current role
-    let menuItems = roleMenu[currentRole] || roleMenu["MEMBER"];
 
-    // 🔑 2. If nav links are hidden, filter the array down strictly to the core Dashboard tab
+    let menuItems = roleMenu[currentRole] || roleMenu["MEMBER"];
     if (hideNavLinks) {
         menuItems = menuItems.filter(item => item.path === "/dashboard");
     }
@@ -48,7 +45,7 @@ export default function Sidebar({ hideNavLinks = false }: SidebarProps) {
 
     return (
         <>
-            {/* --- 1. DESKTOP SIDEBAR  --- */}
+            {/* --- DESKTOP SIDEBAR  --- */}
             <div className="d-none d-lg-block flex-column vh-100 text-white shadow"
                 style={{ width: "20%", background: "#002141", position: "fixed", top: 0, left: 0, zIndex: '9999' }}
             >
@@ -58,7 +55,7 @@ export default function Sidebar({ hideNavLinks = false }: SidebarProps) {
                 <MenuList />
             </div>
 
-            {/* --- 2. MOBILE SIDEBAR  --- */}
+            {/* --- MOBILE SIDEBAR  --- */}
             <div
                 className="offcanvas offcanvas-start d-lg-none text-white"
                 id="mobileSidebar"

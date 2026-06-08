@@ -32,6 +32,7 @@ export const UserPage = () => {
         return () => clearTimeout(delayDebounceFn);
     }, [searchTerm, setSearchParams, nameFromUrl]);
 
+    // -----------Get All Users -----------
     const { data, isLoading: dataLoading } = useQuery({
         queryKey: ['users', nameFromUrl, page],
         queryFn: () => getMembers(page, size, nameFromUrl),
@@ -49,8 +50,6 @@ export const UserPage = () => {
     const handleCloseModal = () => {
         setIsAddModalOpen(false);
     };
-
-
 
     return (
         <div className="container-fluid">
