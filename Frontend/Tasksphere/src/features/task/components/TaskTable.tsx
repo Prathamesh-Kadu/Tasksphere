@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import type { TaskResponse } from "../types/task.types";
 import { deleteTask, updateStatus } from "../service/taskService";
 import { AppModal } from "../../../components/modals/AppModal";
+import { toastError, toastSuccess } from "../../../components/toast/toast";
 
 interface TaskTableProps {
     tasks: TaskResponse[];
@@ -17,32 +18,33 @@ export const TaskTable = ({ tasks, loggedUserRole }: TaskTableProps) => {
     const navigate = useNavigate();
 
     const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
-    
-    // 🔑 State monitoring for tracking which task is currently having its status changed
-    const [statusTargetTask, setStatusTargetTask] = useState<{ id: string; currentStatus: string } | null>(null);
+
+  const [statusTargetTask, setStatusTargetTask] = useState<{ id: string; currentStatus: string } | null>(null);
     const [selectedStatus, setSelectedStatus] = useState<string>("");
 
-    // Deletion Mutation
+    //------------ Deletion Task ----------
     const deleteMutation = useMutation({
         mutationFn: (id: string) => deleteTask(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['tasks'], exact: false });
             setDeleteTargetId(null);
+            toastSuccess("Task deleted successfully");
         },
-        onError: (error) => {
-            console.error("Failed to delete task:", error);
+        onError: () => {
+            toastError("Failed to delete task.");
         }
     });
 
-    // 🔑 Lightweight Status Update Mutation Flow
+    // ----------- Update Task Status ------------
     const statusMutation = useMutation({
         mutationFn: ({ id, status }: { id: string; status: string }) => updateStatus(id, status),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['tasks'], exact: false });
             setStatusTargetTask(null);
+            toastSuccess("Task status updated successfully");
         },
-        onError: (error) => {
-            console.error("Failed to alter status code state:", error);
+        onError: () => {
+            toastError("Failed to update task status.");
         }
     });
 
@@ -59,7 +61,6 @@ export const TaskTable = ({ tasks, loggedUserRole }: TaskTableProps) => {
         setDeleteTargetId(id);
     };
 
-    // 🔑 Triggers when a MEMBER clicks directly on a row's status badge
     const handleStatusClick = (id: string, currentStatus: string) => {
         if (loggedUserRole === "MEMBER") {
             setStatusTargetTask({ id, currentStatus });
@@ -73,7 +74,6 @@ export const TaskTable = ({ tasks, loggedUserRole }: TaskTableProps) => {
         }
     };
 
-    // 🔑 Triggers execution for the inline patch state payload
     const handleStatusUpdateSubmit = () => {
         if (statusTargetTask) {
             statusMutation.mutate({ id: statusTargetTask.id, status: selectedStatus });
@@ -97,8 +97,7 @@ export const TaskTable = ({ tasks, loggedUserRole }: TaskTableProps) => {
                                     {loggedUserRole === "SUPER_ADMIN" && <th>Organization</th>}
                                     {loggedUserRole !== "MEMBER" && <th>Project</th>}
                                     {loggedUserRole !== "MEMBER" && <th>Assigned</th>}
-                                    {/* 🔑 Opened column context layer up so MEMBER can access simple updates */}
-                                    {(loggedUserRole === "ADMIN" || loggedUserRole === "MEMBER") && <th>Actions</th>}
+                                   {(loggedUserRole === "ADMIN" || loggedUserRole === "MEMBER") && <th>Actions</th>}
                                 </tr>
                             </thead>
 
@@ -109,10 +108,9 @@ export const TaskTable = ({ tasks, loggedUserRole }: TaskTableProps) => {
                                         {loggedUserRole !== "SUPER_ADMIN" && <td>{task.description || "N/A"}</td>}
                                         {loggedUserRole !== "SUPER_ADMIN" && loggedUserRole !== "OWNER" && (
                                             <td>
-                                                <span 
+                                                <span
                                                     className={`badge bg-${task.status === 'DONE' ? 'success' : task.status === 'IN_PROGRESS' ? 'warning text-dark' : 'secondary'}`}
-                                                    // 🔑 Changes pointer and adds click trigger explicitly for MEMBER roles
-                                                    style={{ cursor: loggedUserRole === "MEMBER" ? "pointer" : "default" }}
+                                                   style={{ cursor: loggedUserRole === "MEMBER" ? "pointer" : "default" }}
                                                     onClick={() => handleStatusClick(task.id, task.status)}
                                                     title={loggedUserRole === "MEMBER" ? "Click to change status" : ""}
                                                 >
@@ -126,8 +124,7 @@ export const TaskTable = ({ tasks, loggedUserRole }: TaskTableProps) => {
                                         )}
                                         {loggedUserRole !== "MEMBER" && <td>{task.projectName}</td>}
                                         {loggedUserRole !== "MEMBER" && <td>{task.assignedToUser || "Unassigned"}</td>}
-                                        
-                                        {/* 🔑 Managed execution paths dynamically based on active user scopes */}
+
                                         {(loggedUserRole === "ADMIN" || loggedUserRole === "MEMBER") && (
                                             <td>
                                                 <div className="d-flex justify-content-center gap-3">
@@ -148,7 +145,7 @@ export const TaskTable = ({ tasks, loggedUserRole }: TaskTableProps) => {
                                                         </>
                                                     )}
                                                     {loggedUserRole === "MEMBER" && (
-                                                        <button 
+                                                        <button
                                                             className="btn btn-sm btn-outline-primary py-0 px-2"
                                                             onClick={() => handleStatusClick(task.id, task.status)}
                                                         >
@@ -166,7 +163,7 @@ export const TaskTable = ({ tasks, loggedUserRole }: TaskTableProps) => {
                 </div>
             </div>
 
-            {/* --- ADMIN DELETION CONFIRMATION MODAL --- */}
+            {/* --- Deletion Modal --- */}
             {deleteTargetId && (
                 <AppModal
                     show={!!deleteTargetId}
@@ -187,7 +184,7 @@ export const TaskTable = ({ tasks, loggedUserRole }: TaskTableProps) => {
                 </AppModal>
             )}
 
-            {/* 🔑 MEMBER STATUS QUICK UPDATE DROPDOWN POPUP */}
+            {/* Status Update Modal */}
             {statusTargetTask && (
                 <AppModal
                     show={!!statusTargetTask}
@@ -196,7 +193,7 @@ export const TaskTable = ({ tasks, loggedUserRole }: TaskTableProps) => {
                 >
                     <div className="py-2">
                         <label htmlFor="statusSelect" className="form-label small fw-bold text-muted">Select Task Progress Status:</label>
-                        <select 
+                        <select
                             id="statusSelect"
                             className="form-select"
                             value={selectedStatus}

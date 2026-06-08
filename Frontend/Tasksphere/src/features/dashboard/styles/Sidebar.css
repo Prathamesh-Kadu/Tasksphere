@@ -1,5 +1,5 @@
 .hamburger-btn {
-    color: #6c757d !important; /* Faint Gray */
+    color: #6c757d !important;
     transition: color 0.2s ease, transform 0.1s ease;
     cursor: pointer;
     background: none !important;
@@ -7,7 +7,7 @@
 }
 
 .hamburger-btn:hover {
-    color: #000000 !important; /* Pure Black */
+    color: #000000 !important;
 }
 
 .content-wrapper {

@@ -6,6 +6,7 @@ import { deleteOrganization, getOrganizations } from "../services/organizationSe
 import type { Organization } from "../types/organization.types";
 import { AppModal } from "../../../components/modals/AppModal";
 import { useNavigate } from "react-router-dom";
+import { toastError, toastSuccess } from "../../../components/toast/toast";
 
 
 export default function OrganizationPage() {
@@ -56,9 +57,10 @@ export default function OrganizationPage() {
         mutationFn: (id: string) => deleteOrganization(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['organizations'] });
+            toastSuccess("Organization deleted successfully");
         },
-        onError: (err) => {
-            console.error("Delete failed", err);
+        onError: () => {
+            toastError("Failed to delete organization.");
         }
     })
 

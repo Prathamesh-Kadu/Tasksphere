@@ -1,5 +1,6 @@
 package com.prathamesh.tasksphere.service;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -57,24 +58,27 @@ public class ProjectServiceImpl implements ProjectService {
 	@Transactional
 	public ProjectResponse createProject(ProjectRequest request) {
 
-		User currentUser = getLoggedInUser();
+	    User currentUser = getLoggedInUser();
 
-		User existingUser = userRepository.findById(currentUser.getId())
-				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
+	    User existingUser = userRepository.findById(currentUser.getId())
+	            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-		getOrgIdOrThrow(existingUser);
+	    getOrgIdOrThrow(existingUser);
 
-		Project project = Project.builder().name(request.getName()).description(request.getDescription())
-				.organization(existingUser.getOrganization()).build();
+	    Project project = Project.builder()
+	            .name(request.getName())
+	            .description(request.getDescription())
+	            .organization(existingUser.getOrganization())
+	            .build();
 
-		Set<User> members = new HashSet<>();
-		members.add(existingUser);
-		project.setMembers(members);
+	    Project savedProject = projectRepository.save(project);
+	    projectRepository.safeAddMember(savedProject.getId(), existingUser.getId());
 
-		Project existingProject = projectRepository.save(project);
-
-		return ProjectResponse.builder().id(existingProject.getId()).name(existingProject.getName())
-				.description(existingProject.getDescription()).build();
+	    return ProjectResponse.builder()
+	            .id(savedProject.getId())
+	            .name(savedProject.getName())
+	            .description(savedProject.getDescription())
+	            .build();
 	}
 
 	@Override
@@ -153,88 +157,89 @@ public class ProjectServiceImpl implements ProjectService {
 	@Transactional
 	public void deleteProject(UUID id) {
 
-		User user = getLoggedInUser();
-		getOrgIdOrThrow(user);
+	    User user = getLoggedInUser();
+	    UUID orgId = getOrgIdOrThrow(user);
 
-		Project project = projectRepository.findByIdAndOrganization_Id(id, user.getOrganization().getId())
-				.orElseThrow(() -> new ResourceNotFoundException("Project not found"));
+	    Project project = projectRepository.findByIdAndOrganization_Id(id, orgId)
+	            .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
+	    taskRepository.deleteByProjectId(project.getId());
 
-		projectRepository.deleteProjectMembers(id);
+	    projectRepository.deleteProjectMembers(project.getId());
 
-		// 3. Clear the internal collection to prevent Hibernate from trying to sync it
-		project.getMembers().clear();
+	    project.getMembers().clear();
 
-		projectRepository.delete(project);
+	    projectRepository.delete(project);
 	}
 
 	@Override
 	@Transactional
 	public void assignMemberToProject(List<UUID> userIds) {
-		// 1. Authenticate context
 		User loggedAdmin = getLoggedInUser();
 		UUID orgId = getOrgIdOrThrow(loggedAdmin);
 
-		// 2. Fetch project metadata (Safe: no collection is modified or read here)
 		Project project = projectRepository.findProjectByAdminMember(loggedAdmin.getId(), orgId)
 				.orElseThrow(() -> new ResourceNotFoundException("No project found assigned to this Admin"));
 
-		// 3. Collect targeted users
 		List<User> usersToAdd = userRepository.findAllById(userIds);
 
-		// 4. Validate organization bounds across all targets
 		for (User user : usersToAdd) {
 			if (user.getOrganization() == null || !user.getOrganization().getId().equals(orgId)) {
 				throw new UnlinkedUserException("User " + user.getName() + " is not part of your organization");
 			}
 		}
 
-		// 5. Insert relationship mappings directly into the join table row-by-row
 		for (User user : usersToAdd) {
 			projectRepository.addMemberLink(project.getId(), user.getId());
 		}
-
-		// Crucial: Remove projectRepository.save(project) completely!
-		// The Direct native queries execute adjustments on the tables immediately.
 	}
 
 	@Override
 	@Transactional
 	public void assignAdminToProject(AssignAdminRequest request) {
-		User currentUser = getLoggedInUser();
-		UUID orgId = getOrgIdOrThrow(currentUser);
+	    User currentUser = getLoggedInUser();
+	    UUID orgId = getOrgIdOrThrow(currentUser);
 
-		
-		Project project = projectRepository.findByIdAndOrganization_Id(request.getProjectId(), orgId)
-				.orElseThrow(() -> new ResourceNotFoundException("Project not found within your organization"));
+	    Project project = projectRepository.findByIdAndOrganization_Id(request.getProjectId(), orgId)
+	            .orElseThrow(() -> new ResourceNotFoundException("Project not found within your organization"));
 
-		
-		projectRepository.clearAllAdminsFromProject(project.getId());
+	    List<User> currentAdmins = userRepository.findAdminsByProjectId(project.getId());
 
-	
-		if (request.getUserIds() == null || request.getUserIds().isEmpty()) {
-			return;
-		}
+	    Set<UUID> newAdminIds = request.getUserIds() != null ? new HashSet<>(request.getUserIds()) : Collections.emptySet();
 
-		
-		List<User> targetUsers = userRepository.findAllById(request.getUserIds());
-		if (targetUsers.isEmpty()) {
-			throw new ResourceNotFoundException("No valid users found for the provided IDs");
-		}
+	    for (User oldAdmin : currentAdmins) {
+	        if (!newAdminIds.contains(oldAdmin.getId())) {
+	            
+	            boolean managesOtherProjects = projectRepository.existsByAdminIdAndIdNot(oldAdmin.getId(), project.getId());
+	            
+	            if (!managesOtherProjects) {
+	                oldAdmin.setRole(Role.MEMBER);
+	                userRepository.save(oldAdmin); 
+	            }
+	        }
+	    }
+	    projectRepository.clearAllAdminsFromProject(project.getId());
 
-		for (User user : targetUsers) {
-			if (!user.getOrganization().getId().equals(orgId)) {
-				throw new AccessDeniedException("User " + user.getName() + " does not belong to your organization");
-			}
+	    if (newAdminIds.isEmpty()) {
+	        return;
+	    }
 
-			if (user.getRole() != Role.ADMIN) {
-				user.setRole(Role.ADMIN);
-				userRepository.save(user); 
-			}
+	    List<User> targetUsers = userRepository.findAllById(request.getUserIds());
+	    if (targetUsers.isEmpty()) {
+	        throw new ResourceNotFoundException("No valid users found for the provided IDs");
+	    }
 
-			projectRepository.safeAddMember(project.getId(), user.getId());
-		}
+	    for (User user : targetUsers) {
+	        if (!user.getOrganization().getId().equals(orgId)) {
+	            throw new AccessDeniedException("User " + user.getName() + " does not belong to your organization");
+	        }
+
+	        if (user.getRole() != Role.ADMIN) {
+	            user.setRole(Role.ADMIN);
+	            userRepository.save(user); 
+	        }
+	        projectRepository.safeAddMember(project.getId(), user.getId());
+	    }
 	}
-
 	@Override
 	@Transactional
 	public void removeMemberFromProject(UUID userId) {

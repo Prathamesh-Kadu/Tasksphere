@@ -15,11 +15,19 @@ import org.springframework.transaction.annotation.Transactional;
 import com.prathamesh.tasksphere.model.Project;
 
 public interface ProjectRepository extends JpaRepository<Project, UUID> {
+	long countByOrganizationId(UUID organizationId);
+
+	@Query("SELECT p.id FROM Project p JOIN p.members m WHERE m.id = :userId")
+	List<UUID> findProjectIdsByUserId(@Param("userId") UUID userId);
+
 	List<Project> findByOrganization_Id(UUID organizationId);
 
 	Optional<Project> findByIdAndOrganization_Id(UUID projectId, UUID organizationId);
 
 	List<Project> findByMembers_Id(UUID userId);
+
+	@Query("SELECT COUNT(p) > 0 FROM Project p JOIN p.members m WHERE m.id = :userId AND p.id != :currentProjectId")
+	boolean existsByAdminIdAndIdNot(@Param("userId") UUID userId, @Param("currentProjectId") UUID currentProjectId);
 
 	@Modifying
 	@Query(value = "DELETE FROM project_members WHERE user_id = :userId", nativeQuery = true)
@@ -47,8 +55,6 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
 			+ "AND p.organization.id = :orgId")
 	Optional<Project> findProjectByAdminMember(@Param("adminId") UUID adminId, @Param("orgId") UUID orgId);
 
-	// Safe, clean JPQL to delete the mapping row without loading collections
-	@Modifying
 	@Query(value = "DELETE FROM project_members WHERE project_id = :projectId AND user_id = :userId", nativeQuery = true)
 	void removeMemberLink(@Param("projectId") UUID projectId, @Param("userId") UUID userId);
 
@@ -70,4 +76,12 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
 	@Modifying
 	@Query(value = "DELETE FROM project_members WHERE project_id = :projectId AND user_id IN (SELECT u.id FROM users u WHERE u.role = 'ADMIN')", nativeQuery = true)
 	void clearAllAdminsFromProject(@Param("projectId") UUID projectId);
+
+	@Modifying
+	@Query(value = "DELETE pm FROM project_members pm INNER JOIN projects p ON pm.project_id = p.id WHERE p.organization_id = :orgId", nativeQuery = true)
+	void deleteProjectMembersByOrganizationId(@Param("orgId") UUID orgId);
+
+	@Modifying
+	@Query("DELETE FROM Project p WHERE p.organization.id = :orgId")
+	void deleteByOrganizationId(@Param("orgId") UUID orgId);
 }

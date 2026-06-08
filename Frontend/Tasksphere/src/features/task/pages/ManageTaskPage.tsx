@@ -8,8 +8,8 @@ import { getMembers } from "../../../services/commonService";
 import { getProjects } from "../../project/services/projectService";
 import { taskSchema } from "../schemas/task.schema";
 import type { TaskRequest } from "../types/task.types";
-// 🔑 Added updateTask import
-import { createTask, getTask, updateTask } from "../service/taskService"; 
+import { createTask, getTask, updateTask } from "../service/taskService";
+import { toastError, toastSuccess } from "../../../components/toast/toast";
 
 export const ManageTaskPage = () => {
     const navigate = useNavigate();
@@ -29,20 +29,20 @@ export const ManageTaskPage = () => {
         resolver: zodResolver(taskSchema)
     });
 
-    // 1. Fetch Task Details 
+    // ----------- Fetch All Task -----------
     const { data: taskData, isLoading: isTaskLoading } = useQuery({
         queryKey: ['task', id],
         queryFn: () => getTask(id!),
         enabled: isEditMode,
     });
 
-    // 2. Fetch Projects Dropdown Cache
+    // ---------- Fetech Projects ------------------
     const { data: projectData, isLoading: isProjectsLoading } = useQuery({
         queryKey: ['projects', '', 0],
         queryFn: () => getProjects(0, 100, ""),
     });
 
-    // 3. Fetch Members Dropdown Cache
+    // ------------ Fetch Users ---------
     const { data: userData, isLoading: isUsersLoading } = useQuery({
         queryKey: ['users', '', 0],
         queryFn: () => getMembers(0, 100, ""),
@@ -78,26 +78,27 @@ export const ManageTaskPage = () => {
         }
     }, [taskData, isEditMode, projectList.length, userList.length, reset]);
 
-    // Create Task Mutation Logic
+    // --------------- Create Task ---------
     const createTaskMutation = useMutation({
         mutationFn: (formData: TaskRequest) => createTask(formData),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["tasks"], exact: false });
             navigate("/dashboard/tasks");
+            toastSuccess("Task created successfully");
         },
-        onError: (error) => console.error("Task creation error:", error)
+        onError: () => toastError("Failed to create task.")
     });
 
-    // 🔑 2. ADDED: Update Task Mutation Logic
+    // ---------- Update Task ----------
     const updateTaskMutation = useMutation({
         mutationFn: (formData: TaskRequest) => updateTask(id!, formData),
         onSuccess: () => {
-            // Clear out stale cache metrics instantly
             queryClient.invalidateQueries({ queryKey: ["tasks"], exact: false });
             queryClient.invalidateQueries({ queryKey: ["task", id] });
             navigate("/dashboard/tasks");
+            toastSuccess("Task updated successfully");
         },
-        onError: (error) => console.error("Task update error:", error)
+        onError: () => toastError("Failed to update task.")
     });
 
     const onSubmit = (formData: TaskRequest) => {
@@ -108,7 +109,6 @@ export const ManageTaskPage = () => {
                 : formData.dueDate
         };
 
-        // 🔑 3. BRANCHING OPERATION ACCORDING TO THE MODECONTEXT
         if (isEditMode) {
             updateTaskMutation.mutate(finalPayload);
         } else {
@@ -116,7 +116,6 @@ export const ManageTaskPage = () => {
         }
     };
 
-    // 🔑 FIXED SKELETON LOAD CONDITIONS: Only stall layouts if we are loading an existing task record
     if (isEditMode && isTaskLoading) {
         return (
             <div className="d-flex flex-column align-items-center justify-content-center p-5 min-vh-50">
@@ -197,7 +196,6 @@ export const ManageTaskPage = () => {
                                 <input
                                     id="dueDate"
                                     type="datetime-local"
-                                    // 🔑 NATIVE FIX: Only block past choices visually when creating a brand new item!
                                     min={!isEditMode ? new Date().toISOString().substring(0, 16) : undefined}
                                     className={`form-control form-control-sm ${errors.dueDate ? "is-invalid" : ""}`}
                                     {...register("dueDate")}

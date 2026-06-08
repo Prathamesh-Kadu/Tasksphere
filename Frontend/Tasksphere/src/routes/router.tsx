@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate } from "react-router-dom";
+import { createBrowserRouter } from "react-router-dom";
 import LoginPage from "../features/auth/pages/LoginPage";
 import RegisterPage from "../features/auth/pages/RegisterPage";
 import DashboardPage from "../features/dashboard/pages/DashboardPage";
@@ -10,9 +10,11 @@ import { ProjectPage } from "../features/project/pages/ProjectPage";
 import { TaskPage } from "../features/task/pages/TaskPage";
 import { ManageTaskPage } from "../features/task/pages/ManageTaskPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
+import DashboardHome from "../features/dashboard/components/DashboardHome";
+import LandingPage from "../features/auth/pages/LandingPage";
 
 const router = createBrowserRouter([
-    { path: "/", element: <Navigate to="/login" replace /> },
+    { path: "/", element: <LandingPage/> },
     { path: "/login", element: <LoginPage /> },
     { path: "/register", element: <RegisterPage /> },
 
@@ -20,7 +22,7 @@ const router = createBrowserRouter([
         path: "/dashboard",
         element: <DashboardPage />,
         children: [
-            { index: true, element: null },
+            { index: true, element: <DashboardHome /> },
 
             {
                 element: <ProtectedRoute allowedRoles={['SUPER_ADMIN']} />,

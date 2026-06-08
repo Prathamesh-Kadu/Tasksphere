@@ -8,27 +8,27 @@ import type { UserResponse } from "../../../types/common.types";
 import { assignProjectAdmin } from "../services/projectService";
 import { useDebounce } from "use-debounce";
 import useAuth from "../../../hooks/useAuth";
+import { toastError, toastSuccess } from "../../../components/toast/toast";
 
 interface AssignAdminModalProps {
     show: boolean;
     handleClose: () => void;
     projectId: string;
-    currentAdmins?: string[]; // Array of String Names sent from table
+    currentAdmins?: string[];
 }
 
 export const AssignAdminModal = ({ show, handleClose, projectId, currentAdmins = [] }: AssignAdminModalProps) => {
     const queryClient = useQueryClient();
     const { role } = useAuth();
-    
+
     const [search, setSearch] = useState("");
-    const [debouncedSearch] = useDebounce(search, 500); // 500ms is more snappy than 1000ms
+    const [debouncedSearch] = useDebounce(search, 500);
     const [showDropdown, setShowDropdown] = useState<boolean>(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    // Track state cleanly as an array of objects
     const [selectedUsers, setSelectedUsers] = useState<UserResponse[]>([]);
 
-    // ------------ Click Outside Dropdown Handler ------------
+
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -39,22 +39,20 @@ export const AssignAdminModal = ({ show, handleClose, projectId, currentAdmins =
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    // ------------ Get Users for Selection list ------------
+    // ------------ Get Users ------------
     const { data, isFetching } = useQuery({
         queryKey: ['users-search', debouncedSearch],
         queryFn: () => getMembers(0, 10, debouncedSearch || ""),
         enabled: !!role && show,
     });
 
-    // ------------ Sync Incoming Initial Names with Object States ------------
+
     useEffect(() => {
         if (data?.content && selectedUsers.length === 0 && currentAdmins.length > 0) {
-            // Find full profiles for the names that are already assigned
-            const matchedFromCurrentSearch = data.content.filter((u: UserResponse) => 
+            const matchedFromCurrentSearch = data.content.filter((u: UserResponse) =>
                 currentAdmins.includes(u.name)
             );
-            
-            // Build temporary user shells for any names not found in the current search page
+
             const fallbackShells = currentAdmins
                 .filter(name => !matchedFromCurrentSearch.some((u: UserResponse) => u.name === name))
                 .map(name => ({ id: `assigned-${name}`, name, email: "Assigned Administrator", role: "ADMIN" }));
@@ -63,19 +61,19 @@ export const AssignAdminModal = ({ show, handleClose, projectId, currentAdmins =
         }
     }, [data?.content, currentAdmins]);
 
-    // ------------ Filter Out Selected Admins from Dropdown View ------------
+    // ------------ Filter Selected Users ------------
     const availableUsersToSelect = data?.content?.filter((user: UserResponse) => {
-        // Look up by exact name or exact ID matching criteria
+
         const isAlreadySelected = selectedUsers.some(
             selected => selected.id === user.id || selected.name === user.name
         );
-        return !isAlreadySelected;
+        const isNormalMember = user.role === "MEMBER";
+        return !isAlreadySelected && isNormalMember;
     }) || [];
 
     // ------------ Assign Project Admins Mutation ------------
     const { mutate, isPending } = useMutation({
         mutationFn: () => {
-            // Filter out fallback shells and map clean systemic database UUIDs
             const realIds = selectedUsers
                 .filter(u => !u.id.startsWith("assigned-"))
                 .map(u => u.id);
@@ -84,18 +82,18 @@ export const AssignAdminModal = ({ show, handleClose, projectId, currentAdmins =
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['projects'], exact: false });
             handleClose();
+            toastSuccess("Project admins updated successfully");
         },
         onError: (err) => {
             console.error("Assignment failed", err);
+            toastError("Failed to update project admins.");
         }
     });
 
     const handleSelectUser = (user: UserResponse) => {
-        // Double check existence array validation parameters
         if (!selectedUsers.some(u => u.id === user.id || u.name === user.name)) {
-            // Remove any placeholder shells matching this real entity name
             setSelectedUsers(prev => [
-                ...prev.filter(p => p.name !== user.name), 
+                ...prev.filter(p => p.name !== user.name),
                 user
             ]);
         }
@@ -144,7 +142,7 @@ export const AssignAdminModal = ({ show, handleClose, projectId, currentAdmins =
                         ))}
                     </div>
                 )}
-                
+
                 {showDropdown && search && availableUsersToSelect.length === 0 && !isFetching && (
                     <div className="list-group position-absolute w-100 shadow" style={{ zIndex: 1050 }}>
                         <div className="list-group-item small text-muted italic text-center py-2 bg-light">No additional matches found</div>

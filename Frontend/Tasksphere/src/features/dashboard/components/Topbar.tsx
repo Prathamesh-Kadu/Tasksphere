@@ -15,7 +15,7 @@ const TopBar = () => {
     <nav className="navbar navbar-expand bg-white border-bottom px-2 py-2 sticky-top shadow-sm">
       <div className="container-fluid d-flex justify-content-between align-items-center">
         
-        {/* Mobile Sidebar Hamburger Toggle */}
+        {/* Hamburger Toggle */}
         <button
           className="btn d-lg-none me-3 border-0 p-0 hamburger-btn"
           type="button"
@@ -30,10 +30,10 @@ const TopBar = () => {
           TaskSphere
         </span>
 
-        {/* 🔑 DYNAMIC WORKSPACE HEADERS BASED ON ACTIVE USER SCOPE */}
+      
         <div className="d-none d-md-flex align-items-center text-secondary ms-2" style={{ fontSize: '13px' }}>
           
-          {/* 1. OWNER Layout View: Displays only Organization Name */}
+          
           {role === "OWNER" && user?.organizationName && (
             <div className="d-flex align-items-center gap-1">
               <span className="text-muted fw-normal">Organization:</span>
@@ -41,7 +41,7 @@ const TopBar = () => {
             </div>
           )}
 
-          {/* 2. ADMIN & MEMBER Layout View: Displays both Organization & Assigned Projects */}
+         
           {(role === "ADMIN" || role === "MEMBER") && (
             <div className="d-flex align-items-center gap-2 flex-wrap">
               {user?.organizationName && (
@@ -66,10 +66,8 @@ const TopBar = () => {
             </div>
           )}
           
-          {/* 3. SUPER_ADMIN Layout Context: Evaluates to null/blank space automatically */}
-        </div>
-
-        {/* Right Aligned Profile Avatar & Actions Dropdown menu context */}
+       
+        </div> 
         <div className="dropdown ms-auto py-2">
           <div
             className="d-flex align-items-center dropdown-toggle border-0"
@@ -81,9 +79,7 @@ const TopBar = () => {
               style={{ width: '35px', height: '35px', fontSize: '0.9rem' }}
             >
               {getInitial()}
-            </div>
-
-            {/* Desktop View: Dynamic Name and Role */}
+            </div> 
             <div className="d-none d-md-block text-end me-2">
               <div className="fw-bold text-dark mb-0" style={{ fontSize: '14px' }}>
                 {user?.name || "Loading..."}
@@ -92,9 +88,7 @@ const TopBar = () => {
                 {role || "Guest"}
               </div>
             </div>
-          </div>
-
-          {/* Dropdown Menu */}
+          </div>    
           <ul className="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
             <li className="px-3 py-2 d-md-none border-bottom mb-1">
               <div className="fw-bold small">{user?.name}</div>

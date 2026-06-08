@@ -7,9 +7,9 @@ import useAuth from "../../../hooks/useAuth";
 
 const PendingWorkspace = () => {
     const { logout, user } = useAuth();
-    
+
     const handleRefresh = () => {
-        window.location.reload(); // Simple refresh to re-trigger auth state validation
+        window.location.reload();
     };
 
     return (
@@ -19,13 +19,13 @@ const PendingWorkspace = () => {
                     <div className="spinner-grow text-primary opacity-25" role="status" style={{ width: "3rem", height: "3rem" }}></div>
                     <div className="text-primary fw-bold" style={{ fontSize: "1.8rem", marginTop: "-2.8rem" }}>⏳</div>
                 </div>
-                
+
                 <h4 className="fw-bold text-dark mb-2">Welcome, {user?.name || "Team Member"}!</h4>
                 <p className="text-muted small px-2">
-                    Your account profile is ready, but you haven't been linked to an organization workspace yet. 
+                    Your account profile is ready, but you haven't been linked to an organization workspace yet.
                     Please contact your manager or platform administrator to get added to your team.
                 </p>
-                
+
                 <div className="d-flex justify-content-center gap-3 mt-4">
                     <button onClick={handleRefresh} className="btn btn-primary d-inline-flex align-items-center gap-2 px-4 py-2 rounded-pill shadow-sm fw-medium btn-sm">
                         <BiRefresh size={18} /> Check Access Again
@@ -40,21 +40,18 @@ const PendingWorkspace = () => {
 };
 
 export default function DashboardPage() {
-    const { user, role } = useAuth(); // 🔑 3. Extract active profile status parameters
+    const { user, role } = useAuth();
 
-    // 🔑 4. Evaluate access scope condition boundary
-    // If the role is an operational tier (ADMIN/MEMBER) but has no registered organization name, flag them as unassigned.
     const isUnassigned = (role === "MEMBER" || role === "ADMIN") && !user?.organizationName;
 
     return (
         <div className="d-flex w-100">
-            {/* 🔑 5. Pass down the boolean status to hide operational sidebar items */}
+
             <Sidebar hideNavLinks={isUnassigned} />
-            
+
             <div className="content-wrapper flex-grow-1 d-flex flex-column bg-light" style={{ minWidth: 0 }}>
                 <TopBar />
                 <main className="p-4 flex-grow-1">
-                    {/* 🔑 6. Intercept layout rendering conditionally */}
                     {isUnassigned ? <PendingWorkspace /> : <Outlet />}
                 </main>
             </div>

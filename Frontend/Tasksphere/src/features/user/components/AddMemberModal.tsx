@@ -8,6 +8,7 @@ import useAuth from "../../../hooks/useAuth";
 import { getUsersBySearch } from "../../../services/commonService";
 import type { UserResponse } from "../../../types/common.types";
 import { addUserToOrg, addUserToProject } from "../services/userService";
+import { toastError, toastSuccess } from "../../../components/toast/toast";
 
 interface AddMemberModalProps {
     show: boolean;
@@ -35,12 +36,13 @@ export const AddMemberModal = ({ show, handleClose, existingMembers }: AddMember
         enabled: show && showUserList && !!role,
     });
 
+
+    // -------------- Add Members ----------------
     const { mutate, isPending } = useMutation({
         mutationFn: () => {
             const userIds = selectedUsers.map(u => u.id);
 
             if (role === "ADMIN") {
-                // Admin adds to specific project
                 return addUserToProject(userIds);
             } else {
                 return addUserToOrg(userIds);
@@ -49,6 +51,9 @@ export const AddMemberModal = ({ show, handleClose, existingMembers }: AddMember
         onSuccess: () => {
             if (role === "ADMIN") {
                 queryClient.invalidateQueries({ queryKey: ["projects"] });
+                toastSuccess("Members added to project successfully");
+            } else {
+                toastSuccess("Members added to organization successfully");
             }
             queryClient.invalidateQueries({ queryKey: ["users"] });
 
@@ -57,6 +62,11 @@ export const AddMemberModal = ({ show, handleClose, existingMembers }: AddMember
         },
         onError: (err) => {
             console.error("Failed to add members", err);
+            if (role === "ADMIN") {
+                toastError("Failed to add members to project.");
+            } else {
+                toastError("Failed to add members to organization.");
+            }
         }
     });
 
@@ -154,7 +164,7 @@ export const AddMemberModal = ({ show, handleClose, existingMembers }: AddMember
                     onClick={() => mutate()}
                     disabled={selectedUsers.length === 0 || isPending}
                 >
-                    {isPending ? <><ButtonLoader /> Adding...</> : (role === "OWNER"? "Add to Organization" : "Add to Project")}
+                    {isPending ? <><ButtonLoader /> Adding...</> : (role === "OWNER" ? "Add to Organization" : "Add to Project")}
                 </button>
             </div>
         </AppModal>

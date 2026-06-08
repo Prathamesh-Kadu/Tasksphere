@@ -1,5 +1,4 @@
 import { getToken, removeToken } from "../utils/tokenStorage"
-
 import axios from "axios";
 
 export const axiosClient = axios.create({
@@ -27,15 +26,20 @@ axiosClient.interceptors.response.use(
     return response
   },
   (error) => {
-
     const status = error.response?.status
     const message = error.response?.data?.message || "Something went wrong"
-
+    
+    const requestUrl = error.config?.url || "";
+  
     if (status === 401) {
-      removeToken()
-      window.location.href = "/login"
-    }
+      const isLoginRequest = requestUrl.includes("/login") || requestUrl.includes("/auth/login");
 
+      if (!isLoginRequest) {
+        removeToken();
+        window.location.replace("/");
+        return Promise.reject({ status, message });
+      }
+    }
     return Promise.reject({
       status,
       message
@@ -43,4 +47,4 @@ axiosClient.interceptors.response.use(
   }
 )
 
-export default axiosClient
+export default axiosClient;

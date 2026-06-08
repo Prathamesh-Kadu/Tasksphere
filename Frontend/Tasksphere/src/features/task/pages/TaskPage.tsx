@@ -10,8 +10,6 @@ export const TaskPage = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const navigate = useNavigate();
 
-
-
     const nameFromUrl = searchParams.get("name") || "";
     const page = parseInt(searchParams.get("page") || "0");
     const size = 10;
@@ -30,6 +28,7 @@ export const TaskPage = () => {
         return () => clearTimeout(delayDebounceFn);
     }, [searchTerm, setSearchParams, nameFromUrl]);
 
+    // ------------- Get All Tasks ----------------
     const { data, isLoading } = useQuery({
         queryKey: ['tasks', nameFromUrl, page],
         queryFn: () => getAllTasks(page, size, nameFromUrl),
@@ -75,14 +74,6 @@ export const TaskPage = () => {
                     />
                 )}
             </div>
-
-
-            {/* Add and Update Modal */}
-            {/* {isModalOpen && <ProjectModal
-                show={isModalOpen}
-                handleClose={handleCloseModal}
-                initialData={selectedProject}
-            />} */}
         </div>
     );
 };
