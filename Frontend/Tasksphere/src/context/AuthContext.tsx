@@ -1,11 +1,14 @@
 import { createContext, useCallback, useEffect, useState } from "react";
 import { getToken, removeToken, isTokenExpired } from "../utils/tokenStorage";
 import axiosClient from "../api/interceptor";
+import type { UserResponse } from "../types/common.types";
+import { toastInfo, toastSuccess } from "../components/toast/toast";
 
 interface AuthContextType {
   user: any;
   role: string | null;
   loading: boolean;
+  isAuthenticated: boolean;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }
@@ -13,16 +16,25 @@ interface AuthContextType {
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<UserResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+
+  const handleSessionExpiry = useCallback(() => {
+    removeToken();
+    setUser(null);
+    setLoading(false);
+
+    if (window.location.pathname !== "/") {
+      toastInfo("Session expired. Returning to homepage.");
+      window.location.replace("/");
+    }
+  }, []);
 
   const fetchUserInfo = useCallback(async () => {
     const token = getToken();
 
     if (!token || isTokenExpired(token)) {
-      removeToken();
-      setUser(null);
-      setLoading(false);
+      handleSessionExpiry();
       return;
     }
 
@@ -30,21 +42,35 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const response = await axiosClient.get("/user/me");
       setUser(response.data);
     } catch (error) {
-      removeToken();
-      setUser(null);
+      handleSessionExpiry();
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [handleSessionExpiry]);
+
 
   useEffect(() => {
     fetchUserInfo();
-  }, [fetchUserInfo]);
+    const sessionInterval = setInterval(() => {
+      const token = getToken();
+
+      if (window.location.pathname !== "/" && window.location.pathname !== "/login" && window.location.pathname !== "/register") {
+        if (!token || isTokenExpired(token)) {
+          handleSessionExpiry();
+        }
+      }
+    }, 5000);
+
+    return () => clearInterval(sessionInterval);
+  }, [fetchUserInfo, handleSessionExpiry]);
 
   const logout = () => {
-    removeToken();
+    toastSuccess("Logged out successfully.");
     setUser(null);
-    window.location.href = "/login";
+    removeToken();
+    setTimeout(() => {
+      window.location.replace("/");
+    }, 10);
   };
 
   return (
@@ -52,10 +78,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       user,
       role: user?.role || null,
       loading,
+      isAuthenticated: !!user,
       logout,
       refreshUser: fetchUserInfo
     }}>
       {children}
     </AuthContext.Provider>
   );
-};
+};  

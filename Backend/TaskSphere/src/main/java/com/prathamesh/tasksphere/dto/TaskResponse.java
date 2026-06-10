@@ -14,18 +14,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class TaskResponse {
+public class TaskResponse { 
 	private UUID id;
-
     private String title;
-
     private String description;
-
     private TaskStatus status;
-
-    private UUID projectId;
-
-    private UUID assignedUserId;
-
     private LocalDateTime dueDate;
+    private String assignedToUser;   
+    private String projectName;
+    private String organizationName;
 }

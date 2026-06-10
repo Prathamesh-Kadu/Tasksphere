@@ -1,5 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { Link, useNavigate } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query";
 import AuthButton from "../components/AuthButton";
 import AuthInput from "../components/AuthInput";
 import AuthLayout from "../components/AuthLayout";
@@ -7,25 +9,39 @@ import { registerSchema } from "../schema/auth.schema";
 import type { RegisterRequest } from "../types/auth.types";
 import { registerUser } from "../services/authService";
 import useCancelableRequest from "../hooks/useCancelableRequest";
+import { BiArrowBack } from "react-icons/bi";
+import { toastError, toastSuccess } from "../../../components/toast/toast";
 
 export default function RegisterPage() {
-    const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<RegisterRequest>({
-        resolver: zodResolver(registerSchema)
-    })
-
+    const navigate = useNavigate();
     const { createSignal } = useCancelableRequest();
 
-    const onRegisterSubmit = async (data: RegisterRequest) => {
-        try {
-            const response = await registerUser(data, createSignal());
+    const { register, handleSubmit, reset, formState: { errors } } = useForm<RegisterRequest>({
+        resolver: zodResolver(registerSchema)
+    });
+
+    const registerMutation = useMutation({
+        mutationFn: (data: RegisterRequest) => {
+            return registerUser(data, createSignal());
+        },
+        onSuccess: () => {
             reset();
-            console.log(response);
-        } catch (error: any) {
+            navigate("/login");
+            toastSuccess("Registration successfully");
+
+        },
+        onError: (error: any) => {
             console.error("Register failed:", error);
+            toastError("Registration Failed");
         }
-    }
+    });
+
+    const onRegisterSubmit = (data: RegisterRequest) => {
+        registerMutation.mutate(data);
+    };
 
     return (
+        // Form
         <AuthLayout title="Register">
             <form onSubmit={handleSubmit(onRegisterSubmit)}>
                 <AuthInput
@@ -36,6 +52,7 @@ export default function RegisterPage() {
                     error={errors.name}
                     autocomplete="name"
                 />
+
                 <AuthInput
                     label="Email"
                     type="email"
@@ -44,6 +61,7 @@ export default function RegisterPage() {
                     error={errors.email}
                     autocomplete="email"
                 />
+
                 <AuthInput
                     label="Password"
                     type="password"
@@ -54,11 +72,30 @@ export default function RegisterPage() {
                 />
 
                 <AuthButton
-                    isLoading={isSubmitting}
+                    isLoading={registerMutation.isPending}
                     label="Register"
                     loadingLabel="Registering"
                 />
             </form>
+            {/* Login Link */}
+            <div className="text-center mt-3 small text-muted">
+                Already have an account?{" "}
+                <Link
+                    to="/login"
+                    className="text-primary text-decoration-none fw-semibold"
+                >
+                    Login here
+                </Link>
+            </div>
+            {/* Back to home button */}
+            <div className="text-center mt-2 pt-2 border-top border-light">
+                <Link
+                    to="/"
+                    className="text-muted text-decoration-none small d-inline-flex align-items-center gap-1 hover-effect"
+                >
+                    <BiArrowBack size={14} /> Back to Home
+                </Link>
+            </div>
         </AuthLayout>
     );
 }

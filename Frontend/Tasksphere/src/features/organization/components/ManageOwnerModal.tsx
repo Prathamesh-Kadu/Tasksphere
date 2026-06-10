@@ -7,6 +7,7 @@ import { assignOwner } from "../services/organizationService";
 import ButtonLoader from "../../../components/loader/ButtonLoader";
 import type { UserResponse } from "../../../types/common.types";
 import { getUsersBySearch } from "../../../services/commonService";
+import { toastError, toastSuccess } from "../../../components/toast/toast";
 
 interface ManageOwnerModalProps {
     show: boolean;
@@ -35,9 +36,11 @@ export const ManageOwnerModal = ({ show, handleClose, organization: org }: Manag
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["organization", org.id] });
             handleClose();
+            toastSuccess("Owners updated successfully");
         },
         onError: (err) => {
             console.error("Delete failed", err);
+            toastError("Failed to update owners.");
         }
     })
 
@@ -92,7 +95,7 @@ export const ManageOwnerModal = ({ show, handleClose, organization: org }: Manag
                 )}
             </div>
 
-            {/* CHIPS SECTION (THE OWNERS) */}
+            {/* Chips Section */}
             <div className="mt-4">
                 <label className="form-label small text-muted text-uppercase fw-bold">Current & Pending Owners</label>
                 <div className="d-flex flex-wrap gap-2 border rounded p-3 bg-light-subtle" style={{ minHeight: '60px' }}>

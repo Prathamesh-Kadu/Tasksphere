@@ -7,6 +7,7 @@ import type { UserResponse } from "../../../types/common.types";
 export type OrganizationRequest = z.infer<typeof organizationSchema>
 
 
+
 export interface OrganizationResponse {
   id: string;
   name: string;

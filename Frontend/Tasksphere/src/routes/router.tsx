@@ -2,23 +2,28 @@ import { createBrowserRouter } from "react-router-dom";
 import LoginPage from "../features/auth/pages/LoginPage";
 import RegisterPage from "../features/auth/pages/RegisterPage";
 import DashboardPage from "../features/dashboard/pages/DashboardPage";
-import { OrganizationDetailPage } from "../features/organization/pages/OrganizationDetailPage";
-import OrganizationPage from "../features/organization/pages/OrganizationPage";
 import ProtectedRoute from "./ProtectedRoute";
+import OrganizationPage from "../features/organization/pages/OrganizationPage";
+import { OrganizationDetailPage } from "../features/organization/pages/OrganizationDetailPage";
 import { UserPage } from "../features/user/pages/UserPage";
+import { ProjectPage } from "../features/project/pages/ProjectPage";
+import { TaskPage } from "../features/task/pages/TaskPage";
+import { ManageTaskPage } from "../features/task/pages/ManageTaskPage";
+import { NotFoundPage } from "../pages/NotFoundPage";
+import DashboardHome from "../features/dashboard/components/DashboardHome";
+import LandingPage from "../features/auth/pages/LandingPage";
 
 const router = createBrowserRouter([
-    // { path: "/", element:  },
+    { path: "/", element: <LandingPage/> },
     { path: "/login", element: <LoginPage /> },
     { path: "/register", element: <RegisterPage /> },
-    { path: "/dashboard", element: <DashboardPage /> },
 
-    // --- 3. Super Admin Only Group ---
     {
         path: "/dashboard",
         element: <DashboardPage />,
         children: [
-            { index: true, element: null },
+            { index: true, element: <DashboardHome /> },
+
             {
                 element: <ProtectedRoute allowedRoles={['SUPER_ADMIN']} />,
                 children: [
@@ -26,43 +31,33 @@ const router = createBrowserRouter([
                     { path: "organizations/:id", element: <OrganizationDetailPage /> },
                 ]
             },
+
             {
                 element: <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN', 'OWNER']} />,
                 children: [
-                    { path: "users", element: <UserPage /> }, // Your new user feature page
+                    { path: "users", element: <UserPage /> },
+                    { path: "projects", element: <ProjectPage /> },
+                ]
+            },
+            {
+                element: <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN', 'OWNER', 'MEMBER']} />,
+                children: [
+                    { path: "tasks", element: <TaskPage /> },
+                ]
+            },
+            {
+                element: <ProtectedRoute allowedRoles={['ADMIN']} />,
+                children: [
+                    { path: "tasks/manage", element: <ManageTaskPage /> },
+                    { path: "tasks/manage/:id", element: <ManageTaskPage /> },
                 ]
             },
         ]
     },
-    // --- 2. Protected Group (Everyone Logged In) ---
-    //   {
-    //     /* We DON'T give this a 'path'. 
-    //        It is just a 'Gatekeeper' for the children below.
-    //     */
-    //     element: <ProtectedRoute />, 
-    //     children: [
-    //       { path: "/dashboard", element: <DashboardPage /> },
-    //       { path: "/profile", element: <ProfilePage /> },
-    //     ]
-    //   },
-
-    //   // --- 3. Role-Specific Group (Admins/Managers Only) ---
-    //   {
-    //     /* HERE is where you put allowedRoles. 
-    //        Only children of THIS object will be checked for these roles.
-    //     */
-    //     element: <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']} />,
-    //     children: [
-    //       { path: "/inventory", element: <InventoryPage /> },
-    //     ]
-    //   },
-
-    //   // --- 4. The Fallback (The "Catch-All") ---
-    //   { 
-    //     path: "*", 
-    //     element: <Navigate to="/login" replace /> 
-    //   }
-
+    {
+        path: "*",
+        element: <NotFoundPage />
+    }
 ]);
 
 export default router;

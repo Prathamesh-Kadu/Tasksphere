@@ -2,12 +2,20 @@ import { Link, useLocation } from "react-router-dom";
 import useAuth from "../../../hooks/useAuth";
 import { roleMenu } from "../config/roleMenu";
 
-export default function Sidebar() {
+interface SidebarProps {
+    hideNavLinks?: boolean;
+}
+
+export default function Sidebar({ hideNavLinks = false }: SidebarProps) {
     const location = useLocation();
     const { user } = useAuth();
 
     const currentRole = user?.role || "MEMBER";
-    const menuItems = roleMenu[currentRole] || roleMenu["MEMBER"];
+
+    let menuItems = roleMenu[currentRole] || roleMenu["MEMBER"];
+    if (hideNavLinks) {
+        menuItems = menuItems.filter(item => item.path === "/dashboard");
+    }
 
     const isActive = (path: string) => {
         const currentPath = location.pathname;
@@ -37,7 +45,7 @@ export default function Sidebar() {
 
     return (
         <>
-            {/* --- 1. DESKTOP SIDEBAR  --- */}
+            {/* --- DESKTOP SIDEBAR  --- */}
             <div className="d-none d-lg-block flex-column vh-100 text-white shadow"
                 style={{ width: "20%", background: "#002141", position: "fixed", top: 0, left: 0, zIndex: '9999' }}
             >
@@ -47,7 +55,7 @@ export default function Sidebar() {
                 <MenuList />
             </div>
 
-            {/* --- 2. MOBILE SIDEBAR  --- */}
+            {/* --- MOBILE SIDEBAR  --- */}
             <div
                 className="offcanvas offcanvas-start d-lg-none text-white"
                 id="mobileSidebar"

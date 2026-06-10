@@ -15,7 +15,16 @@ import com.prathamesh.tasksphere.model.Role;
 import com.prathamesh.tasksphere.model.User;
 
 public interface UserRepository extends JpaRepository<User, UUID> {
+	long countByOrganizationId(UUID organizationId);
+
+	@Query("SELECT COUNT(DISTINCT m.id) FROM Project p JOIN p.members m WHERE p.id IN :projectIds")
+	long countDistinctUsersInProjects(@Param("projectIds") List<UUID> projectIds);
+
 	Optional<User> findByEmail(String email);
+
+	@Modifying
+	@Query("UPDATE User u SET u.role = 'MEMBER', u.organization = null WHERE u.organization.id = :orgId")
+	void demoteAndDetachUsersByOrganizationId(@Param("orgId") UUID orgId);
 
 	List<User> findByOrganizationId(UUID organizationId);
 
@@ -29,13 +38,25 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 			+ "AND (:name IS NULL OR LOWER(u.name) LIKE LOWER(CONCAT('%', :name, '%')))")
 	Page<User> searchGlobal(String name, Pageable pageable);
 
-	@Query("SELECT u FROM User u WHERE u.organization.id = :orgId " + "AND u.id <> :loggedUserId " + // Exclude the
-																										// logged-in
-																										// user
-			"AND u.role <> 'SUPER_ADMIN' "
+	@Query("SELECT u FROM User u WHERE u.organization.id = :orgId " + "AND u.id <> :loggedUserId "
+			+ "AND u.role <> 'SUPER_ADMIN' "
 			+ "AND (:name IS NULL OR :name = '' OR LOWER(u.name) LIKE LOWER(CONCAT('%', :name, '%')))")
 	Page<User> searchInOrganization(@Param("orgId") UUID orgId, @Param("loggedUserId") UUID loggedUserId,
 			@Param("name") String name, Pageable pageable);
-	
 
+	@Query("SELECT u FROM User u " + "JOIN u.projects p " + "JOIN p.members m " + "WHERE p.organization.id = :orgId "
+			+ "AND m.id = :adminId AND m.role = 'ADMIN' " + // Verify Admin owns the project
+			"AND (:name IS NULL OR LOWER(u.name) LIKE LOWER(CONCAT('%', :name, '%')))")
+	Page<User> searchInProjectByAdmin(@Param("adminId") UUID adminId, @Param("orgId") UUID orgId,
+			@Param("name") String name, Pageable pageable);
+
+	@Query("SELECT DISTINCT u FROM User u " + "JOIN u.projects p " + "JOIN p.members m " + "WHERE m.id = :memberId "
+			+ "AND (:name IS NULL OR LOWER(u.name) LIKE LOWER(CONCAT('%', :name, '%')))")
+	Page<User> searchInProjectByMember(@Param("memberId") UUID memberId, @Param("name") String name, Pageable pageable);
+
+	@Query("SELECT u.name FROM User u JOIN u.projects p WHERE p.id = :projectId AND u.role = 'ADMIN'")
+	List<String> findAdminNamesByProjectId(@Param("projectId") UUID projectId);
+
+	@Query("SELECT u FROM User u JOIN u.projects p WHERE p.id = :projectId AND u.role = 'ADMIN'")
+	List<User> findAdminsByProjectId(@Param("projectId") UUID projectId);
 }
